@@ -176,6 +176,84 @@
   .choice-btn.correct { background: var(--color-correct-bg); border-color: var(--color-correct); }
   .choice-btn.wrong { background: var(--color-wrong-bg); border-color: var(--color-wrong); }
   .choice-btn.disabled { pointer-events: none; opacity: 0.85; }
+
+  /* 左右2択ピッカー（借方/貸方、BS/PLなど） */
+  .side-picker {
+    display: flex;
+    border: 2px solid var(--color-border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 4px 0 16px;
+  }
+  .side-box {
+    flex: 1;
+    padding: 28px 10px;
+    text-align: center;
+    cursor: pointer;
+    background: #fff;
+    transition: background 0.15s;
+  }
+  .side-box:first-child { border-right: 2px solid var(--color-border); }
+  .side-box:hover:not(.disabled) { background: #f3f4f6; }
+  .side-box .side-label { font-size: 1.35rem; font-weight: bold; }
+  .side-box .side-sub { font-size: 0.78rem; color: var(--color-text-sub); margin-top: 4px; }
+  .side-box.correct { background: var(--color-correct-bg); }
+  .side-box.correct .side-label { color: var(--color-correct); }
+  .side-box.wrong { background: var(--color-wrong-bg); }
+  .side-box.wrong .side-label { color: var(--color-wrong); }
+  .side-box.disabled { pointer-events: none; }
+
+  /* BS/PL構造図（5分類ピッカー・解説図で共用） */
+  .acct-diagram {
+    display: flex;
+    gap: 10px;
+    margin: 6px 0 16px;
+    flex-wrap: wrap;
+  }
+  .ad-block {
+    flex: 1;
+    min-width: 150px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .ad-title {
+    background: #f9fafb;
+    font-size: 0.72rem;
+    font-weight: bold;
+    color: var(--color-text-sub);
+    text-align: center;
+    padding: 5px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .ad-bs-grid { display: flex; height: 100px; }
+  .ad-bs-grid > .ad-cell:first-child { flex: 1; }
+  .ad-bs-right { flex: 1; display: flex; flex-direction: column; }
+  .ad-bs-right .ad-cell { flex: 1; }
+  .ad-pl-grid { display: flex; height: 64px; }
+  .ad-pl-grid .ad-cell { flex: 1; }
+  .ad-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    font-size: 0.82rem;
+    font-weight: bold;
+    color: var(--color-text-sub);
+    background: #fff;
+    text-align: center;
+  }
+  .ad-cell-side { font-size: 0.65rem; font-weight: normal; margin-top: 2px; }
+  .ad-cell.ad-hl { background: var(--color-primary); color: #fff; border-color: var(--color-primary-dark); }
+  .ad-cell.ad-hl .ad-cell-side { color: #dbeafe; }
+  .ad-cell.ad-clickable { cursor: pointer; }
+  .ad-cell.ad-clickable:hover:not(.disabled) { background: #eef2ff; }
+  .ad-cell.ad-disabled-choice { opacity: 0.35; }
+  .ad-cell.correct { background: var(--color-correct-bg); border-color: var(--color-correct); color: var(--color-correct); }
+  .ad-cell.wrong { background: var(--color-wrong-bg); border-color: var(--color-wrong); color: var(--color-wrong); }
+  .ad-cell.disabled { pointer-events: none; }
   .blank-row {
     display: flex;
     gap: 10px;
@@ -341,6 +419,7 @@ const ACCOUNTS = [
 const CATS = ["資産", "負債", "純資産", "費用", "収益"];
 const HOMES = ["借方", "貸方"];
 const BSPLS = ["BS", "PL"];
+const ACCOUNT_MAP = new Map(ACCOUNTS.map(a => [a.name, a]));
 
 function shuffle(arr) {
   const a = arr.slice();
@@ -371,17 +450,19 @@ function generateFormCQuestions() {
   ACCOUNTS.forEach((acc, idx) => {
     const noteLine = acc.note ? `\n補足: ${acc.note}` : "";
 
-    // Q1: 5分類
+    // Q1: 5分類（BS/PL構造図の5マスから選ぶ）
     {
-      const { choices, correctIndex } = buildChoiceSet(acc.category, CATS, 3);
+      const { choices, correctIndex } = buildChoiceSet(acc.category, CATS, CATS.length - 1);
       qs.push({
         id: `c_${idx}_cat`,
         type: "C",
+        visual: "category",
         topic: "勘定科目診断",
         level: acc.level,
-        prompt: `「${acc.name}」の5分類（資産・負債・純資産・費用・収益）は？`,
+        prompt: `「${acc.name}」の5分類は？ 図の中から選んでください。`,
         choices,
         correctIndex,
+        diagramCategories: [acc.category],
         explanation: threeStep(
           `「${acc.name}」が増える場面を思い浮かべる`,
           `「${acc.name}」は【${acc.category}】に分類される`,
@@ -390,17 +471,19 @@ function generateFormCQuestions() {
       });
     }
 
-    // Q2: ホームポジション
+    // Q2: ホームポジション（借方/貸方の左右ピッカー）
     {
       const { choices, correctIndex } = buildChoiceSet(acc.home, HOMES, 1);
       qs.push({
         id: `c_${idx}_home`,
         type: "C",
+        visual: "side",
         topic: "勘定科目診断",
         level: acc.level,
         prompt: `「${acc.name}」が増えた（発生した）とき、記入するのはどちら側？`,
         choices,
         correctIndex,
+        diagramCategories: [acc.category],
         explanation: threeStep(
           `「${acc.name}」が増加するケースを考える`,
           `「${acc.name}」は【${acc.category}】に分類される`,
@@ -409,17 +492,19 @@ function generateFormCQuestions() {
       });
     }
 
-    // Q3: BS or PL
+    // Q3: BS or PL（左右ピッカー）
     {
       const { choices, correctIndex } = buildChoiceSet(acc.bsPl, BSPLS, 1);
       qs.push({
         id: `c_${idx}_bspl`,
         type: "C",
+        visual: "bspl",
         topic: "勘定科目診断",
         level: acc.level,
         prompt: `「${acc.name}」はBS（貸借対照表）・PL（損益計算書）のどちらの科目？`,
         choices,
         correctIndex,
+        diagramCategories: [acc.category],
         explanation: threeStep(
           `「${acc.name}」は残高が繰り越されるか、期間で集計されるかを考える`,
           `「${acc.name}」は【${acc.category}】に分類される`,
@@ -711,6 +796,7 @@ function generateFormDQuestions() {
       topic: raw.topic,
       level: raw.level,
       prompt: `【基本】${raw.base}\n【追加事象】${raw.event}\nこの場合に追加で必要な仕訳は？`,
+      journal: { debit: raw.debit, credit: raw.credit },
       choices,
       correctIndex,
       explanation: threeStep(raw.steps[0], raw.steps[1], raw.steps[2]),
@@ -967,13 +1053,152 @@ function renderJournalTable(journal) {
   `;
 }
 
+/* ---- BS/PL構造図（5分類ピッカー・解説図で共用） ---- */
+function acctCell(cat, side, opts) {
+  opts = opts || {};
+  const cls = ["ad-cell"];
+  if (opts.clickable) cls.push("ad-clickable", "js-pick");
+  if (opts.disabled) cls.push("disabled");
+  if (opts.hl) cls.push("ad-hl");
+  if (opts.disabledChoice) cls.push("ad-disabled-choice");
+  if (opts.stateClass) cls.push(opts.stateClass);
+  const idxAttr = opts.dataIdx !== undefined ? ` data-idx="${opts.dataIdx}"` : "";
+  return `<div class="${cls.join(" ")}"${idxAttr}>
+    <div class="ad-cell-name">${cat}</div>
+    <div class="ad-cell-side">(${side})</div>
+  </div>`;
+}
+
+function renderAcctDiagramShell(cells) {
+  return `
+    <div class="acct-diagram">
+      <div class="ad-block">
+        <div class="ad-title">貸借対照表 (BS)</div>
+        <div class="ad-bs-grid">
+          ${cells.asset}
+          <div class="ad-bs-right">${cells.liability}${cells.equity}</div>
+        </div>
+      </div>
+      <div class="ad-block">
+        <div class="ad-title">損益計算書 (PL)</div>
+        <div class="ad-pl-grid">${cells.expense}${cells.revenue}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderAcctDiagramStatic(highlightCategories) {
+  const hl = new Set(highlightCategories || []);
+  const mk = (cat, side) => acctCell(cat, side, { hl: hl.has(cat) });
+  return renderAcctDiagramShell({
+    asset: mk("資産", "借方"),
+    liability: mk("負債", "貸方"),
+    equity: mk("純資産", "貸方"),
+    expense: mk("費用", "借方"),
+    revenue: mk("収益", "貸方"),
+  });
+}
+
+function renderAcctDiagramPicker(q, answered, last) {
+  const mk = (cat, side) => {
+    const idx = q.choices.indexOf(cat);
+    if (idx === -1) return acctCell(cat, side, { disabledChoice: true });
+    let stateClass = "";
+    if (answered) {
+      if (idx === q.correctIndex) stateClass = "correct";
+      else if (last && idx === last.userAnswerLabel) stateClass = "wrong";
+    }
+    return acctCell(cat, side, { clickable: !answered, disabled: answered, dataIdx: idx, stateClass });
+  };
+  return renderAcctDiagramShell({
+    asset: mk("資産", "借方"),
+    liability: mk("負債", "貸方"),
+    equity: mk("純資産", "貸方"),
+    expense: mk("費用", "借方"),
+    revenue: mk("収益", "貸方"),
+  });
+}
+
+/* ---- 借方/貸方・BS/PL の左右2択ピッカー ---- */
+function renderSidePicker(q, labels, subLabels, answered, last) {
+  return `
+    <div class="side-picker">
+      ${labels.map(label => {
+        const idx = q.choices.indexOf(label);
+        const cls = ["side-box"];
+        if (answered) {
+          cls.push("disabled");
+          if (idx === q.correctIndex) cls.push("correct");
+          else if (last && idx === last.userAnswerLabel) cls.push("wrong");
+        } else {
+          cls.push("js-pick");
+        }
+        return `<div class="${cls.join(" ")}" data-idx="${idx}">
+          <div class="side-label">${label}</div>
+          <div class="side-sub">${subLabels[label] || ""}</div>
+        </div>`;
+      }).join("")}
+    </div>
+  `;
+}
+
+function renderChoiceBody(q, answered, last) {
+  if (q.visual === "side") {
+    return renderSidePicker(q, ["借方", "貸方"], { 借方: "（左側）", 貸方: "（右側）" }, answered, last);
+  }
+  if (q.visual === "bspl") {
+    return renderSidePicker(q, ["BS", "PL"], { BS: "貸借対照表（左右）", PL: "損益計算書（左右）" }, answered, last);
+  }
+  if (q.visual === "category") {
+    return renderAcctDiagramPicker(q, answered, last);
+  }
+  return `<div id="choices">
+    ${q.choices.map((c, i) => {
+      const cls = ["choice-btn"];
+      if (answered) {
+        cls.push("disabled");
+        if (i === q.correctIndex) cls.push("correct");
+        else if (last && i === last.userAnswerLabel) cls.push("wrong");
+      } else {
+        cls.push("js-pick");
+      }
+      return `<button class="${cls.join(" ")}" data-idx="${i}" ${answered ? "disabled" : ""}>${c}</button>`;
+    }).join("")}
+  </div>`;
+}
+
+/* ---- 解説文 + 該当科目のBS/PL構造図 ---- */
+function journalCategories(journal) {
+  if (!journal) return [];
+  const names = [...journal.debit, ...journal.credit].map(e => e.account);
+  return names.map(n => ACCOUNT_MAP.get(n)).filter(Boolean).map(a => a.category);
+}
+
+function formBCategories(q) {
+  return [q.debit.correct, q.credit.correct]
+    .map(n => ACCOUNT_MAP.get(n)).filter(Boolean).map(a => a.category);
+}
+
+function diagramCategoriesFor(q) {
+  if (q.diagramCategories) return q.diagramCategories;
+  if (q.type === "B") return formBCategories(q);
+  if (q.journal) return journalCategories(q.journal);
+  return [];
+}
+
+function renderExplanationBlock(q) {
+  const cats = diagramCategoriesFor(q);
+  return `
+    <div class="explanation-box">${q.explanation.replace(/\n/g, "<br>")}</div>
+    ${cats.length > 0 ? renderAcctDiagramStatic(cats) : ""}
+  `;
+}
+
 function renderChoiceQuestion(q) {
   return `
     <div class="prompt-text">${q.prompt.replace(/\n/g, "<br>")}</div>
     ${renderJournalTable(q.journal)}
-    <div id="choices">
-      ${q.choices.map((c, i) => `<button class="choice-btn" data-idx="${i}">${c}</button>`).join("")}
-    </div>
+    ${renderChoiceBody(q, false, null)}
   `;
 }
 
@@ -1032,13 +1257,8 @@ function renderChoiceStudy(q) {
     <div class="prompt-text">${q.prompt.replace(/\n/g, "<br>")}</div>
     ${renderJournalTable(q.journal)}
     <div class="result-banner ok">正解はこちら</div>
-    <div id="choices">
-      ${q.choices.map((c, i) => {
-        const cls = i === q.correctIndex ? "choice-btn disabled correct" : "choice-btn disabled";
-        return `<button class="${cls}" disabled>${c}</button>`;
-      }).join("")}
-    </div>
-    <div class="explanation-box">${q.explanation.replace(/\n/g, "<br>")}</div>
+    ${renderChoiceBody(q, true, null)}
+    ${renderExplanationBlock(q)}
     <button class="main-btn" id="next-btn">次へ</button>
   `;
 }
@@ -1048,7 +1268,7 @@ function renderBlankStudy(q) {
     <div class="prompt-text">${q.prompt}</div>
     <div class="result-banner ok">正解はこちら</div>
     ${renderJournalTable({ debit: [{ account: q.debit.correct, amount: q.amount }], credit: [{ account: q.credit.correct, amount: q.amount }] })}
-    <div class="explanation-box">${q.explanation.replace(/\n/g, "<br>")}</div>
+    ${renderExplanationBlock(q)}
     <button class="main-btn" id="next-btn">次へ</button>
   `;
 }
@@ -1061,15 +1281,8 @@ function renderChoiceAnswered(q) {
     <div class="prompt-text">${q.prompt.replace(/\n/g, "<br>")}</div>
     ${renderJournalTable(q.journal)}
     <div class="result-banner ${bannerClass}">${bannerText}</div>
-    <div id="choices">
-      ${q.choices.map((c, i) => {
-        let cls = "choice-btn disabled";
-        if (i === q.correctIndex) cls += " correct";
-        else if (i === last.userAnswerLabel) cls += " wrong";
-        return `<button class="${cls}" disabled>${c}</button>`;
-      }).join("")}
-    </div>
-    <div class="explanation-box">${q.explanation.replace(/\n/g, "<br>")}</div>
+    ${renderChoiceBody(q, true, last)}
+    ${renderExplanationBlock(q)}
     <button class="main-btn" id="next-btn">次へ</button>
   `;
 }
@@ -1096,7 +1309,7 @@ function renderBlankAnswered(q) {
     <div class="section-label">あなたの回答</div>
     ${userTable}
     ${correctTable}
-    <div class="explanation-box">${q.explanation.replace(/\n/g, "<br>")}</div>
+    ${renderExplanationBlock(q)}
     <button class="main-btn" id="next-btn">次へ</button>
   `;
 }
@@ -1128,7 +1341,7 @@ function bindQuizEvents() {
         });
       }
     } else {
-      document.querySelectorAll(".choice-btn").forEach(el => {
+      document.querySelectorAll(".js-pick").forEach(el => {
         el.addEventListener("click", () => {
           const idx = parseInt(el.dataset.idx, 10);
           recordAnswer(idx === q.correctIndex, idx);
@@ -1198,7 +1411,7 @@ function renderWrongItem(h) {
       <div class="wq">${q.prompt.replace(/\n/g, "<br>")}</div>
       <div class="wa">あなたの回答: ${userAnsText}</div>
       <div class="wc">正解: ${correctText}</div>
-      <div class="explanation-box">${q.explanation.replace(/\n/g, "<br>")}</div>
+      ${renderExplanationBlock(q)}
     </div>
   `;
 }
