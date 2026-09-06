@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>会計仕訳クイズトレーナー</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root {
+    --color-primary: #2563eb;
+    --color-primary-dark: #1d4ed8;
+    --color-correct: #16a34a;
+    --color-correct-bg: #dcfce7;
+    --color-wrong: #dc2626;
+    --color-wrong-bg: #fee2e2;
+    --color-bg: #f3f4f6;
+    --color-card: #ffffff;
+    --color-text: #1f2937;
+    --color-text-sub: #6b7280;
+    --color-border: #e5e7eb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+    background: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.6;
+  }
+  #app {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 16px;
+    min-height: 100vh;
+  }
+  h1 { font-size: 1.4rem; margin: 8px 0 4px; }
+  h2 { font-size: 1.1rem; margin: 0 0 12px; }
+  .subtitle { color: var(--color-text-sub); font-size: 0.85rem; margin-bottom: 20px; }
+  .card {
+    background: var(--color-card);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .section-label {
+    font-weight: bold;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .badge {
+    display: inline-block;
+    background: #eef2ff;
+    color: var(--color-primary-dark);
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 0.75rem;
+    font-weight: bold;
+  }
+  .radio-group, .check-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .pill {
+    border: 1.5px solid var(--color-border);
+    background: #fff;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s;
+  }
+  .pill.selected {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+  }
+  .count-group { display: flex; gap: 8px; }
+  .count-group .pill { flex: 1; text-align: center; }
+  button.main-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 1.05rem;
+    font-weight: bold;
+    color: #fff;
+    background: var(--color-primary);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  button.main-btn:hover { background: var(--color-primary-dark); }
+  button.main-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+  button.sub-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 0.95rem;
+    color: var(--color-primary-dark);
+    background: #eef2ff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  .progress-bar-outer {
+    background: var(--color-border);
+    border-radius: 999px;
+    height: 8px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .progress-bar-inner {
+    background: var(--color-primary);
+    height: 100%;
+    transition: width 0.2s;
+  }
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--color-text-sub);
+    margin-bottom: 12px;
+  }
+  .journal-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 0.95rem;
+  }
+  .journal-table th {
+    background: #f9fafb;
+    font-size: 0.8rem;
+    padding: 6px 8px;
+    border: 1px solid var(--color-border);
+  }
+  .journal-table td {
+    padding: 8px;
+    border: 1px solid var(--color-border);
+    text-align: right;
+  }
+  .journal-table td.account { text-align: left; }
+  .prompt-text {
+    font-size: 1.02rem;
+    margin: 8px 0 16px;
+    white-space: pre-wrap;
+  }
+  .choice-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border: 1.5px solid var(--color-border);
+    background: #fff;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .choice-btn:active { transform: scale(0.99); }
+  .choice-btn.correct { background: var(--color-correct-bg); border-color: var(--color-correct); }
+  .choice-btn.wrong { background: var(--color-wrong-bg); border-color: var(--color-wrong); }
+  .choice-btn.disabled { pointer-events: none; opacity: 0.85; }
+  .blank-box {
+    border: 2px dashed var(--color-border);
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 14px;
+  }
+  .blank-box .blank-label { font-weight: bold; font-size: 0.85rem; margin-bottom: 6px; color: var(--color-text-sub); }
+  .blank-selected {
+    font-size: 1.1rem;
+    font-weight: bold;
+    min-height: 1.4em;
+    margin-bottom: 8px;
+    color: var(--color-primary-dark);
+  }
+  .option-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .option-btn {
+    border: 1.5px solid var(--color-border);
+    background: #fff;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.88rem;
+    cursor: pointer;
+  }
+  .option-btn.chosen { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+  .result-banner {
+    text-align: center;
+    padding: 10px;
+    border-radius: 10px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  .result-banner.ok { background: var(--color-correct-bg); color: var(--color-correct); }
+  .result-banner.ng { background: var(--color-wrong-bg); color: var(--color-wrong); }
+  .explanation-box {
+    background: #f9fafb;
+    border-left: 4px solid var(--color-primary);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 0.9rem;
+    margin: 12px 0;
+    white-space: pre-wrap;
+  }
+  .score-big {
+    font-size: 2.4rem;
+    font-weight: bold;
+    text-align: center;
+    color: var(--color-primary-dark);
+  }
+  .score-sub { text-align: center; color: var(--color-text-sub); margin-bottom: 16px; }
+  .wrong-item {
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    font-size: 0.88rem;
+  }
+  .wrong-item .wq { font-weight: bold; margin-bottom: 6px; }
+  .wrong-item .wa { color: var(--color-wrong); }
+  .wrong-item .wc { color: var(--color-correct); }
+  .chart-wrap { position: relative; height: 260px; margin: 12px 0; }
+  .empty-note {
+    text-align: center;
+    color: var(--color-text-sub);
+    padding: 20px;
+    font-size: 0.9rem;
+  }
+  footer.app-footer {
+    text-align: center;
+    color: var(--color-text-sub);
+    font-size: 0.75rem;
+    margin: 24px 0 8px;
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* =========================================================
+   1. 勘定科目マスタ（形式C: ホームポジション/BS-PL判定 の元データ）
+   ========================================================= */
+const ACCOUNTS = [
+  // 資産 (借方ホームポジション / BS)
+  { name: "現金", category: "資産", home: "借方", bsPl: "BS", level: "初級" },
+  { name: "普通預金", category: "資産", home: "借方", bsPl: "BS", level: "初級" },
+  { name: "当座預金", category: "資産", home: "借方", bsPl: "BS", level: "初級" },
+  { name: "売掛金", category: "資産", home: "借方", bsPl: "BS", level: "初級" },
+  { name: "受取手形", category: "資産", home: "借方", bsPl: "BS", level: "中級" },
+  { name: "前払金", category: "資産", home: "借方", bsPl: "BS", level: "初級" },
+  { name: "前払費用", category: "資産", home: "借方", bsPl: "BS", level: "中級" },
+  { name: "仮払金", category: "資産", home: "借方", bsPl: "BS", level: "中級" },
+  { name: "仮払消費税", category: "資産", home: "借方", bsPl: "BS", level: "中級" },
+  { name: "貸付金", category: "資産", home: "借方", bsPl: "BS", level: "初級" },
+  { name: "未収入金", category: "資産", home: "借方", bsPl: "BS", level: "中級" },
+  { name: "商品", category: "資産", home: "借方", bsPl: "BS", level: "初級" },
+  { name: "仕掛品", category: "資産", home: "借方", bsPl: "BS", level: "上級",
+    note: "受託開発・SES等で、まだ検収（納品確定）していない未完成の作業対価を一時的にプールしておく資産科目。" },
+  { name: "建物", category: "資産", home: "借方", bsPl: "BS", level: "初級" },
+  { name: "備品", category: "資産", home: "借方", bsPl: "BS", level: "初級" },
+  { name: "車両運搬具", category: "資産", home: "借方", bsPl: "BS", level: "初級" },
+  { name: "土地", category: "資産", home: "借方", bsPl: "BS", level: "初級" },
+  { name: "貸倒引当金", category: "資産", home: "貸方", bsPl: "BS", level: "上級",
+    note: "資産（売掛金など）の回収不能見込み額を見積もる「評価勘定」。資産のマイナス項目として機能するため、通常の資産科目とは逆に貸方がホームポジションになる、間違えやすい科目。" },
+
+  // 負債 (貸方ホームポジション / BS)
+  { name: "買掛金", category: "負債", home: "貸方", bsPl: "BS", level: "初級" },
+  { name: "支払手形", category: "負債", home: "貸方", bsPl: "BS", level: "中級" },
+  { name: "未払金", category: "負債", home: "貸方", bsPl: "BS", level: "初級" },
+  { name: "未払費用", category: "負債", home: "貸方", bsPl: "BS", level: "中級" },
+  { name: "前受金", category: "負債", home: "貸方", bsPl: "BS", level: "初級",
+    note: "対価はもう受け取った（または受け取る権利が確定した）が、商品・サービスの提供義務がまだ残っている場合の負債。" },
+  { name: "前受収益", category: "負債", home: "貸方", bsPl: "BS", level: "中級" },
+  { name: "借入金", category: "負債", home: "貸方", bsPl: "BS", level: "初級" },
+  { name: "仮受金", category: "負債", home: "貸方", bsPl: "BS", level: "中級" },
+  { name: "仮受消費税", category: "負債", home: "貸方", bsPl: "BS", level: "中級" },
+  { name: "未払法人税等", category: "負債", home: "貸方", bsPl: "BS", level: "中級" },
+  { name: "預り金", category: "負債", home: "貸方", bsPl: "BS", level: "初級" },
+  { name: "返金負債", category: "負債", home: "貸方", bsPl: "BS", level: "上級",
+    note: "成功報酬型ビジネス等で、将来返金が発生する可能性を見積もって計上する負債。人材紹介の早期離職返金保証などが典型例。" },
+  { name: "GR/IR仮勘定", category: "負債", home: "貸方", bsPl: "BS", level: "上級",
+    note: "SAP会計特有の仮勘定。商品・サービスは検収済み（Goods Receipt）だが、仕入先からの請求書がまだ届いていない（Invoice Receipt未達）場合に一時計上する負債。請求書到達時に買掛金へ振り替わる。" },
+
+  // 純資産 (貸方ホームポジション / BS)
+  { name: "資本金", category: "純資産", home: "貸方", bsPl: "BS", level: "初級" },
+  { name: "資本剰余金", category: "純資産", home: "貸方", bsPl: "BS", level: "上級" },
+  { name: "利益準備金", category: "純資産", home: "貸方", bsPl: "BS", level: "上級" },
+  { name: "繰越利益剰余金", category: "純資産", home: "貸方", bsPl: "BS", level: "上級",
+    note: "決算振替の最終段階で、損益勘定に集約された当期純利益（または純損失）を振り替える先の純資産科目。" },
+
+  // 費用 (借方ホームポジション / PL)
+  { name: "仕入", category: "費用", home: "借方", bsPl: "PL", level: "初級" },
+  { name: "売上原価", category: "費用", home: "借方", bsPl: "PL", level: "中級" },
+  { name: "給料", category: "費用", home: "借方", bsPl: "PL", level: "初級" },
+  { name: "外注費", category: "費用", home: "借方", bsPl: "PL", level: "初級" },
+  { name: "地代家賃", category: "費用", home: "借方", bsPl: "PL", level: "初級" },
+  { name: "広告宣伝費", category: "費用", home: "借方", bsPl: "PL", level: "初級" },
+  { name: "支払手数料", category: "費用", home: "借方", bsPl: "PL", level: "初級" },
+  { name: "通信費", category: "費用", home: "借方", bsPl: "PL", level: "初級" },
+  { name: "消耗品費", category: "費用", home: "借方", bsPl: "PL", level: "初級" },
+  { name: "旅費交通費", category: "費用", home: "借方", bsPl: "PL", level: "初級" },
+  { name: "水道光熱費", category: "費用", home: "借方", bsPl: "PL", level: "初級" },
+  { name: "貸倒引当金繰入", category: "費用", home: "借方", bsPl: "PL", level: "上級",
+    note: "決算時に貸倒引当金を計上する際の相手勘定となる費用科目。" },
+  { name: "減価償却費", category: "費用", home: "借方", bsPl: "PL", level: "中級" },
+  { name: "支払利息", category: "費用", home: "借方", bsPl: "PL", level: "初級" },
+  { name: "法人税等", category: "費用", home: "借方", bsPl: "PL", level: "中級" },
+
+  // 収益 (貸方ホームポジション / PL)
+  { name: "売上高", category: "収益", home: "貸方", bsPl: "PL", level: "初級" },
+  { name: "受取手数料", category: "収益", home: "貸方", bsPl: "PL", level: "初級" },
+  { name: "受取利息", category: "収益", home: "貸方", bsPl: "PL", level: "初級" },
+  { name: "雑収入", category: "収益", home: "貸方", bsPl: "PL", level: "初級" },
+];
+
+const CATS = ["資産", "負債", "純資産", "費用", "収益"];
+const HOMES = ["借方", "貸方"];
+const BSPLS = ["BS", "PL"];
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function pickDistractors(pool, correct, n) {
+  const others = shuffle(pool.filter(x => x !== correct));
+  return others.slice(0, n);
+}
+
+function buildChoiceSet(correct, pool, n) {
+  const choices = shuffle([correct, ...pickDistractors(pool, correct, n)]);
+  return { choices, correctIndex: choices.indexOf(correct) };
+}
+
+function threeStep(step1, step2, step3) {
+  return `①増減判定: ${step1}\n②5分類判定: ${step2}\n③ホームポジション確認: ${step3}`;
+}
+
+/* 形式Cの問題を勘定科目マスタから自動生成（各科目につき3設問） */
+function generateFormCQuestions() {
+  const qs = [];
+  ACCOUNTS.forEach((acc, idx) => {
+    const noteLine = acc.note ? `\n補足: ${acc.note}` : "";
+
+    // Q1: 5分類
+    {
+      const { choices, correctIndex } = buildChoiceSet(acc.category, CATS, 3);
+      qs.push({
+        id: `c_${idx}_cat`,
+        type: "C",
+        topic: "勘定科目診断",
+        level: acc.level,
+        prompt: `「${acc.name}」の5分類（資産・負債・純資産・費用・収益）は？`,
+        choices,
+        correctIndex,
+        explanation: threeStep(
+          `「${acc.name}」が増える場面を思い浮かべる`,
+          `「${acc.name}」は【${acc.category}】に分類される`,
+          `${acc.category}のホームポジションは${acc.home}`
+        ) + noteLine,
+      });
+    }
+
+    // Q2: ホームポジション
+    {
+      const { choices, correctIndex } = buildChoiceSet(acc.home, HOMES, 1);
+      qs.push({
+        id: `c_${idx}_home`,
+        type: "C",
+        topic: "勘定科目診断",
+        level: acc.level,
+        prompt: `「${acc.name}」が増えた（発生した）とき、記入するのはどちら側？`,
+        choices,
+        correctIndex,
+        explanation: threeStep(
+          `「${acc.name}」が増加するケースを考える`,
+          `「${acc.name}」は【${acc.category}】に分類される`,
+          `${acc.category}のホームポジションは【${acc.home}】なので、増加時は${acc.home}に記入する`
+        ) + noteLine,
+      });
+    }
+
+    // Q3: BS or PL
+    {
+      const { choices, correctIndex } = buildChoiceSet(acc.bsPl, BSPLS, 1);
+      qs.push({
+        id: `c_${idx}_bspl`,
+        type: "C",
+        topic: "勘定科目診断",
+        level: acc.level,
+        prompt: `「${acc.name}」はBS（貸借対照表）・PL（損益計算書）のどちらの科目？`,
+        choices,
+        correctIndex,
+        explanation: threeStep(
+          `「${acc.name}」は残高が繰り越されるか、期間で集計されるかを考える`,
+          `「${acc.name}」は【${acc.category}】に分類される`,
+          `資産・負債・純資産はBS科目、費用・収益はPL科目 → 【${acc.bsPl}】科目`
+        ) + noteLine,
+      });
+    }
+  });
+  return qs;
+}
+
+/* =========================================================
+   2. 形式A: 仕訳 → 業務パターン当てクイズ
+   ========================================================= */
+const FORM_A_RAW = [
+  // --- 基本仕訳（汎用） ---
+  { topic: "基本仕訳", level: "初級",
+    debit: [{ account: "仕入", amount: 50000 }], credit: [{ account: "現金", amount: 50000 }],
+    correct: "商品を現金で仕入れた",
+    distractors: ["商品を掛けで仕入れた", "商品を現金で販売した", "備品を現金で購入した"],
+    steps: ["現金が減り、商品（仕入）という費用が発生した", "仕入は費用、現金は資産", "費用のホームポジションは借方、資産の減少は貸方"] },
+  { topic: "基本仕訳", level: "初級",
+    debit: [{ account: "給料", amount: 300000 }], credit: [{ account: "普通預金", amount: 300000 }],
+    correct: "従業員に給料を銀行振込で支払った",
+    distractors: ["外注先に業務委託費を支払った", "借入金を返済した", "従業員から預り金を受け取った"],
+    steps: ["普通預金が減り、給料という費用が発生した", "給料は費用、普通預金は資産", "費用の発生は借方、資産の減少は貸方"] },
+  { topic: "基本仕訳", level: "初級",
+    debit: [{ account: "普通預金", amount: 1000000 }], credit: [{ account: "借入金", amount: 1000000 }],
+    correct: "銀行から資金を借り入れた",
+    distractors: ["出資を受けて増資した", "商品を掛けで販売した", "貸付金を回収した"],
+    steps: ["普通預金が増え、将来返済義務（借入金）が増えた", "普通預金は資産、借入金は負債", "資産の増加は借方、負債の増加は貸方"] },
+  { topic: "基本仕訳", level: "初級",
+    debit: [{ account: "売掛金", amount: 200000 }], credit: [{ account: "売上高", amount: 200000 }],
+    correct: "商品を掛けで販売した",
+    distractors: ["商品を現金で販売した", "商品を掛けで仕入れた", "売掛金を現金で回収した"],
+    steps: ["まだ入金はないが、代金を請求できる権利（売掛金）と売上収益が発生した", "売掛金は資産、売上高は収益", "資産の増加は借方、収益の発生は貸方"] },
+
+  // --- 求人広告掲載型（前受金の期間按分） ---
+  { topic: "求人広告(掲載課金)", level: "初級",
+    debit: [{ account: "売掛金", amount: 100000 }], credit: [{ account: "前受金", amount: 100000 }],
+    correct: "掲載課金の契約が成立し、まだ入金もサービス提供もしていない",
+    distractors: ["商品を掛けで販売した", "前受金を受け取り、サービス提供を完了した", "銀行から借入をした"],
+    steps: ["請求権（売掛金）は発生したが、まだ掲載サービスは提供していないため義務（前受金）も発生", "売掛金は資産、前受金は負債", "資産の増加は借方、負債の増加は貸方"] },
+  { topic: "求人広告(掲載課金)", level: "初級",
+    debit: [{ account: "普通預金", amount: 100000 }], credit: [{ account: "売掛金", amount: 100000 }],
+    correct: "契約済みの掲載料が入金された",
+    distractors: ["掲載サービスの提供が完了し売上計上した", "求人広告の契約が新たに成立した", "掲載料を返金した"],
+    steps: ["現金predepositが増え、請求権（売掛金）が消滅した", "普通預金・売掛金はともに資産", "資産の増加は借方、資産の減少は貸方"] },
+  { topic: "求人広告(掲載課金)", level: "中級",
+    debit: [{ account: "前受金", amount: 50000 }], credit: [{ account: "売上高", amount: 50000 }],
+    correct: "前受金を対価として、掲載サービスの提供期間が経過した分を売上計上した（期間按分）",
+    distractors: ["掲載契約が新たに成立した", "掲載料の入金があった", "掲載契約がキャンセルされ返金した"],
+    steps: ["役務提供義務（前受金）が期間経過分だけ果たされ、その分の収益が発生した", "前受金は負債、売上高は収益", "負債の減少は借方、収益の発生は貸方"] },
+
+  // --- 求人広告（成功報酬・クリック課金型） ---
+  { topic: "求人広告(成功報酬)", level: "初級",
+    debit: [{ account: "売掛金", amount: 80000 }], credit: [{ account: "売上高", amount: 80000 }],
+    correct: "求人広告経由で応募（クリック）が発生し、成功報酬型の売上が確定した。まだ入金はない",
+    distractors: ["求人広告の掲載契約が成立した", "応募者の採用が決定し人材紹介料が確定した", "広告掲載料の前受金を受け取った"],
+    steps: ["役務（応募発生）は完了しており、請求権（売掛金）と収益が同時に発生", "売掛金は資産、売上高は収益", "資産の増加は借方、収益の発生は貸方"] },
+
+  // --- 人材紹介事業（成功報酬型、返金負債あり） ---
+  { topic: "人材紹介", level: "初級",
+    debit: [{ account: "売掛金", amount: 1000000 }], credit: [{ account: "売上高", amount: 1000000 }],
+    correct: "人材紹介で候補者が入社し、成功報酬100万円が確定した。まだ入金はない",
+    distractors: ["求人広告の掲載契約が成立した", "人材派遣の月額請求を行った", "紹介した候補者への返金が確定した"],
+    steps: ["入社確定によりサービス提供が完了し、請求権（売掛金）と収益が発生", "売掛金は資産、売上高は収益", "資産の増加は借方、収益の発生は貸方"] },
+  { topic: "人材紹介", level: "上級",
+    debit: [{ account: "返金負債", amount: 300000 }], credit: [{ account: "普通預金", amount: 300000 }],
+    correct: "早期離職に伴う返金規定に基づき、返金負債を取り崩して実際に返金を行った",
+    distractors: ["返金の可能性を見積もり、返金負債を新たに計上した", "候補者が入社し、成功報酬が確定した", "貸倒引当金を取り崩した"],
+    steps: ["返金義務（返金負債）を実行し、現金が流出した", "返金負債は負債、普通預金は資産", "負債の減少は借方、資産の減少は貸方"] },
+
+  // --- 人材派遣事業 ---
+  { topic: "人材派遣", level: "初級",
+    debit: [{ account: "売掛金", amount: 800000 }], credit: [{ account: "売上高", amount: 800000 }],
+    correct: "派遣先に対して、当月分の派遣料を請求した",
+    distractors: ["派遣スタッフへ給与を支払った", "人材紹介の成功報酬が確定した", "派遣契約の前受金を受け取った"],
+    steps: ["当月の役務提供が完了し、請求権（売掛金）と収益が発生", "売掛金は資産、売上高は収益", "資産の増加は借方、収益の発生は貸方"] },
+  { topic: "人材派遣", level: "中級",
+    debit: [{ account: "売上原価", amount: 500000 }], credit: [{ account: "未払金", amount: 500000 }],
+    correct: "派遣スタッフの給与を、派遣売上に対応する原価として未払計上した",
+    distractors: ["派遣先への売上を計上した", "派遣スタッフへ給与を現金で支払った", "本社従業員の給料を未払計上した"],
+    steps: ["給与支払義務（未払金）が発生し、それに対応する原価（費用）も発生", "売上原価は費用、未払金は負債", "費用の発生は借方、負債の増加は貸方"] },
+
+  // --- 貸倒引当金 ---
+  { topic: "貸倒引当金", level: "上級",
+    debit: [{ account: "貸倒引当金繰入", amount: 10000 }], credit: [{ account: "貸倒引当金", amount: 10000 }],
+    correct: "決算にあたり、売掛金残高の一部について貸倒れの可能性を見積もり、貸倒引当金を計上した",
+    distractors: ["得意先が倒産し、売掛金が回収不能になった", "売掛金を現金で回収した", "貸付金を新たに実行した"],
+    steps: ["将来の回収不能リスクを見積もり、費用（貸倒引当金繰入）を計上", "貸倒引当金繰入は費用、貸倒引当金は資産の評価勘定（貸方が増加側）", "費用の発生は借方、評価勘定の増加は貸方"] },
+  { topic: "貸倒引当金", level: "上級",
+    debit: [{ account: "貸倒引当金", amount: 5000 }], credit: [{ account: "売掛金", amount: 5000 }],
+    correct: "得意先が倒産し、売掛金が回収不能となったため、設定済みの貸倒引当金を取り崩した",
+    distractors: ["決算にあたり貸倒引当金を新たに見積計上した", "得意先から売掛金を回収した", "得意先へ追加の商品を掛け販売した"],
+    steps: ["回収不能が確定し、資産（売掛金）が減少、同時に見積り済みの評価勘定を取り崩す", "貸倒引当金は資産の評価勘定（借方が減少側）、売掛金は資産", "評価勘定の取り崩しは借方、資産の減少は貸方"] },
+
+  // --- 消費税 ---
+  { topic: "消費税", level: "中級",
+    debit: [{ account: "売掛金", amount: 110000 }], credit: [{ account: "売上高", amount: 100000 }, { account: "仮受消費税", amount: 10000 }],
+    correct: "商品を掛けで販売し、代金と合わせて消費税分を仮受計上した",
+    distractors: ["商品を掛けで仕入れ、消費税を仮払計上した", "消費税を税務署に納付した", "商品を現金で販売した（消費税なし）"],
+    steps: ["税込みの請求権（売掛金）が発生し、本体売上と預り分の消費税（仮受消費税）が発生", "売掛金は資産、売上高は収益、仮受消費税は負債", "資産の増加は借方、収益の発生と負債の増加は貸方"] },
+  { topic: "消費税", level: "中級",
+    debit: [{ account: "仕入", amount: 100000 }, { account: "仮払消費税", amount: 10000 }], credit: [{ account: "買掛金", amount: 110000 }],
+    correct: "商品を掛けで仕入れ、代金と合わせて消費税分を仮払計上した",
+    distractors: ["商品を掛けで販売し、消費税を仮受計上した", "消費税を税務署から還付された", "商品を現金で仕入れた（消費税なし）"],
+    steps: ["仕入という費用と、先払いした消費税（仮払消費税という資産）が発生し、支払義務（買掛金）が増加", "仕入は費用、仮払消費税は資産、買掛金は負債", "費用・資産の発生は借方、負債の増加は貸方"] },
+
+  // --- 受託開発・SES ---
+  { topic: "受託開発SES", level: "中級",
+    debit: [{ account: "現金", amount: 300000 }], credit: [{ account: "前受金", amount: 300000 }],
+    correct: "受託開発案件の着手金を受け取った。まだ検収（納品確定）前である",
+    distractors: ["開発案件が検収完了し、売上を計上した", "開発案件の外注費を支払った", "仕掛品を売上原価に振り替えた"],
+    steps: ["現金は増えたが、まだ納品義務（前受金）が残っている", "現金は資産、前受金は負債", "資産の増加は借方、負債の増加は貸方"] },
+  { topic: "受託開発SES", level: "上級",
+    debit: [{ account: "仕掛品", amount: 200000 }], credit: [{ account: "未払金", amount: 200000 }],
+    correct: "開発案件の外注費が発生したが、まだ検収完了前のため、費用化せず仕掛品（資産）として計上した",
+    distractors: ["検収が完了し、外注費を売上原価に計上した", "着手金を受け取った", "開発案件が完了し売上を計上した"],
+    steps: ["支払義務（未払金）は発生したが、対応する収益がまだ確定していないため費用化せず資産計上", "仕掛品は資産、未払金は負債", "資産の増加は借方、負債の増加は貸方"] },
+  { topic: "受託開発SES", level: "上級",
+    debit: [{ account: "前受金", amount: 300000 }, { account: "売掛金", amount: 700000 }], credit: [{ account: "売上高", amount: 1000000 }],
+    correct: "受託開発案件が検収完了し、着手金（前受金）を充当のうえ売上を計上した",
+    distractors: ["受託開発案件の着手金を受け取った", "外注費が発生し仕掛品を計上した", "仕掛品を売上原価に振り替えた"],
+    steps: ["検収完了によりサービス提供義務（前受金）が消滅し、残額の請求権（売掛金）と収益が発生", "前受金は負債、売掛金は資産、売上高は収益", "負債の減少・資産の増加は借方、収益の発生は貸方"] },
+
+  // --- 決算振替仕訳 ---
+  { topic: "決算振替", level: "上級",
+    debit: [{ account: "売上高", amount: 5000000 }], credit: [{ account: "損益", amount: 5000000 }],
+    correct: "決算にあたり、収益科目の残高を損益勘定へ振り替えた",
+    distractors: ["決算にあたり、費用科目の残高を損益勘定へ振り替えた", "当期純利益を繰越利益剰余金へ振り替えた", "商品を掛けで販売した"],
+    steps: ["収益科目の残高をゼロに戻すため、貸方残高の売上高を借方に振り替える", "売上高は収益（損益計算の対象）", "収益の減少（振替）は借方、損益勘定への集約は貸方"] },
+  { topic: "決算振替", level: "上級",
+    debit: [{ account: "損益", amount: 3000000 }], credit: [{ account: "仕入", amount: 3000000 }],
+    correct: "決算にあたり、費用科目の残高を損益勘定へ振り替えた",
+    distractors: ["決算にあたり、収益科目の残高を損益勘定へ振り替えた", "当期純利益を繰越利益剰余金へ振り替えた", "商品を現金で仕入れた"],
+    steps: ["費用科目の残高をゼロに戻すため、借方残高の仕入を貸方に振り替える", "仕入は費用（損益計算の対象）", "損益勘定への集約は借方、費用の減少（振替）は貸方"] },
+  { topic: "決算振替", level: "上級",
+    debit: [{ account: "損益", amount: 2000000 }], credit: [{ account: "繰越利益剰余金", amount: 2000000 }],
+    correct: "決算の結果算出された当期純利益を、繰越利益剰余金へ振り替えた",
+    distractors: ["決算にあたり収益科目を損益勘定へ振り替えた", "決算にあたり費用科目を損益勘定へ振り替えた", "株主へ配当金を支払った"],
+    steps: ["損益勘定に集約された差額（当期純利益）を最終的に純資産へ振り替える", "損益勘定の差額は当期純利益、繰越利益剰余金は純資産", "損益勘定の減少は借方、純資産の増加は貸方"] },
+];
+
+function formatEntry(entries) {
+  return entries.map(e => `${e.account} ${e.amount.toLocaleString()}`).join(" / ");
+}
+
+function generateFormAQuestions() {
+  return FORM_A_RAW.map((raw, idx) => {
+    const { choices, correctIndex } = buildChoiceSet(raw.correct, [raw.correct, ...raw.distractors], 3);
+    return {
+      id: `a_${idx}`,
+      type: "A",
+      topic: raw.topic,
+      level: raw.level,
+      prompt: `次の仕訳は、どの取引を表しているか？\n(借) ${formatEntry(raw.debit)}\n(貸) ${formatEntry(raw.credit)}`,
+      choices,
+      correctIndex,
+      explanation: threeStep(raw.steps[0], raw.steps[1], raw.steps[2]),
+    };
+  });
+}
+
+/* =========================================================
+   3. 形式B: 業務パターン → 仕訳穴埋めクイズ
+   ========================================================= */
+const FORM_B_RAW = [
+  { topic: "基本仕訳", level: "初級",
+    scenario: "商品30,000円を掛けで仕入れた。",
+    amount: 30000,
+    debitCorrect: "仕入", debitOptions: ["仕入", "買掛金", "現金", "売上高"],
+    creditCorrect: "買掛金", creditOptions: ["買掛金", "仕入", "現金", "売掛金"],
+    steps: ["商品を受け取り費用が発生、代金は後払いのため支払義務が発生", "仕入は費用、買掛金は負債", "費用の発生は借方、負債の増加は貸方"] },
+  { topic: "基本仕訳", level: "初級",
+    scenario: "得意先から売掛金80,000円を現金で回収した。",
+    amount: 80000,
+    debitCorrect: "現金", debitOptions: ["現金", "売掛金", "売上高", "普通預金"],
+    creditCorrect: "売掛金", creditOptions: ["売掛金", "現金", "買掛金", "前受金"],
+    steps: ["現金が増え、請求権（売掛金）が消滅", "現金は資産、売掛金は資産", "資産の増加は借方、資産の減少は貸方"] },
+  { topic: "求人広告(掲載課金)", level: "初級",
+    scenario: "求人広告の掲載契約が成立し、契約金額100万円の請求権は発生したが、まだ入金もサービス提供もしていない。",
+    amount: 1000000,
+    debitCorrect: "売掛金", debitOptions: ["売掛金", "前受金", "売上高", "現金"],
+    creditCorrect: "前受金", creditOptions: ["前受金", "前受収益", "売上高", "買掛金"],
+    steps: ["請求権（売掛金）は発生したが、掲載サービスの提供義務（前受金）はまだ残っている", "売掛金は資産、前受金は負債", "資産の増加は借方、負債の増加は貸方"] },
+  { topic: "求人広告(成功報酬)", level: "初級",
+    scenario: "求人広告経由での応募（クリック）が発生し、成功報酬型の売上5万円が確定した。まだ入金はない。",
+    amount: 50000,
+    debitCorrect: "売掛金", debitOptions: ["売掛金", "前受金", "現金", "仮受金"],
+    creditCorrect: "売上高", creditOptions: ["売上高", "前受金", "受取手数料", "雑収入"],
+    steps: ["役務（応募発生）は完了しており、請求権と収益が同時に発生", "売掛金は資産、売上高は収益", "資産の増加は借方、収益の発生は貸方"] },
+  { topic: "人材紹介", level: "初級",
+    scenario: "人材紹介で候補者が入社し、成功報酬100万円が確定した。まだ入金はない。",
+    amount: 1000000,
+    debitCorrect: "売掛金", debitOptions: ["売掛金", "前受金", "売上高", "現金", "前受収益"],
+    creditCorrect: "売上高", creditOptions: ["売上高", "前受金", "売掛金", "受取手数料", "前受収益"],
+    steps: ["入社確定によりサービス提供が完了し、請求権と収益が発生", "売掛金は資産、売上高は収益", "資産の増加は借方、収益の発生は貸方"] },
+  { topic: "人材派遣", level: "初級",
+    scenario: "派遣先に対して当月分の派遣料80万円を請求した。まだ入金はない。",
+    amount: 800000,
+    debitCorrect: "売掛金", debitOptions: ["売掛金", "前受金", "未払金", "現金"],
+    creditCorrect: "売上高", creditOptions: ["売上高", "売上原価", "前受金", "受取手数料"],
+    steps: ["当月の役務提供が完了し、請求権と収益が発生", "売掛金は資産、売上高は収益", "資産の増加は借方、収益の発生は貸方"] },
+  { topic: "人材派遣", level: "中級",
+    scenario: "派遣スタッフへの給与50万円について、派遣売上に対応する原価として未払計上した。",
+    amount: 500000,
+    debitCorrect: "売上原価", debitOptions: ["売上原価", "給料", "未払金", "外注費"],
+    creditCorrect: "未払金", creditOptions: ["未払金", "現金", "売上高", "前受金"],
+    steps: ["給与支払義務が発生し、対応する原価（費用）も発生", "売上原価は費用、未払金は負債", "費用の発生は借方、負債の増加は貸方"] },
+  { topic: "貸倒引当金", level: "上級",
+    scenario: "決算にあたり、売掛金残高に対して貸倒れの可能性を見積もり、1万円の貸倒引当金を計上した。",
+    amount: 10000,
+    debitCorrect: "貸倒引当金繰入", debitOptions: ["貸倒引当金繰入", "貸倒引当金", "売掛金", "支払手数料"],
+    creditCorrect: "貸倒引当金", creditOptions: ["貸倒引当金", "貸倒引当金繰入", "売掛金", "未払金"],
+    steps: ["将来の回収不能リスクを見積もり、費用を計上", "貸倒引当金繰入は費用、貸倒引当金は資産の評価勘定", "費用の発生は借方、評価勘定の増加は貸方"] },
+  { topic: "消費税", level: "中級",
+    scenario: "商品を掛けで仕入れ、本体価格10万円と消費税1万円を合わせて仮払計上した。",
+    amount: 110000,
+    debitCorrect: "仮払消費税", debitOptions: ["仮払消費税", "仮受消費税", "仕入", "買掛金"],
+    creditCorrect: "買掛金", creditOptions: ["買掛金", "売掛金", "未払金", "前受金"],
+    steps: ["仕入という費用と、先払いした消費税が発生し、支払義務が増加", "仮払消費税は資産、買掛金は負債", "資産の発生は借方、負債の増加は貸方"] },
+  { topic: "受託開発SES", level: "中級",
+    scenario: "受託開発案件の着手金30万円を現金で受け取った。まだ検収前である。",
+    amount: 300000,
+    debitCorrect: "現金", debitOptions: ["現金", "前受金", "売掛金", "仕掛品"],
+    creditCorrect: "前受金", creditOptions: ["前受金", "現金", "売上高", "仮受金"],
+    steps: ["現金は増えたが、まだ納品義務が残っている", "現金は資産、前受金は負債", "資産の増加は借方、負債の増加は貸方"] },
+];
+
+function generateFormBQuestions() {
+  return FORM_B_RAW.map((raw, idx) => ({
+    id: `b_${idx}`,
+    type: "B",
+    topic: raw.topic,
+    level: raw.level,
+    prompt: raw.scenario,
+    amount: raw.amount,
+    debit: { correct: raw.debitCorrect, options: shuffle(raw.debitOptions) },
+    credit: { correct: raw.creditCorrect, options: shuffle(raw.creditOptions) },
+    explanation: threeStep(raw.steps[0], raw.steps[1], raw.steps[2]),
+  }));
+}
+
+/* =========================================================
+   4. 形式D: 正常系 → 異常系 応用クイズ
+   ========================================================= */
+const FORM_D_RAW = [
+  { topic: "人材紹介", level: "上級",
+    base: "人材紹介で成功報酬100万円が確定し、(借)売掛金 1,000,000 (貸)売上高 1,000,000 の仕訳を計上済み。",
+    event: "3ヶ月以内に候補者が退職し、返金規定により30万円を返金することになった（まだ返金前）。",
+    debit: [{ account: "売上高", amount: 300000 }], credit: [{ account: "返金負債", amount: 300000 }],
+    correct: "(借)売上高 300,000 (貸)返金負債 300,000",
+    distractors: ["(借)返金負債 300,000 (貸)普通預金 300,000", "(借)貸倒引当金繰入 300,000 (貸)貸倒引当金 300,000", "(借)売掛金 300,000 (貸)売上高 300,000"],
+    steps: ["返金確定により、当初計上した収益の一部を取り消し、返金義務が発生", "売上高は収益、返金負債は負債", "収益の取消（減少）は借方、負債の増加は貸方"] },
+  { topic: "人材紹介", level: "上級",
+    base: "前問で返金負債30万円を計上済み。",
+    event: "実際に候補先企業へ30万円を普通預金から返金した。",
+    debit: [{ account: "返金負債", amount: 300000 }], credit: [{ account: "普通預金", amount: 300000 }],
+    correct: "(借)返金負債 300,000 (貸)普通預金 300,000",
+    distractors: ["(借)売上高 300,000 (貸)返金負債 300,000", "(借)普通預金 300,000 (貸)返金負債 300,000", "(借)貸倒引当金 300,000 (貸)普通預金 300,000"],
+    steps: ["返金義務を実行し、現金が流出", "返金負債は負債、普通預金は資産", "負債の減少は借方、資産の減少は貸方"] },
+  { topic: "受託開発SES", level: "上級",
+    base: "受託開発案件で着手金30万円を前受金として計上済み。開発は進行中。",
+    event: "発注元の都合でプロジェクトが中止となり、着手金を全額返金することになった。",
+    debit: [{ account: "前受金", amount: 300000 }], credit: [{ account: "現金", amount: 300000 }],
+    correct: "(借)前受金 300,000 (貸)現金 300,000",
+    distractors: ["(借)現金 300,000 (貸)前受金 300,000", "(借)売上高 300,000 (貸)現金 300,000", "(借)仕掛品 300,000 (貸)前受金 300,000"],
+    steps: ["役務提供義務（前受金）が消滅し、現金が流出", "前受金は負債、現金は資産", "負債の減少は借方、資産の減少は貸方"] },
+  { topic: "貸倒引当金", level: "上級",
+    base: "決算で売掛金に対し貸倒引当金1万円を設定済み。(借)貸倒引当金繰入 10,000 (貸)貸倒引当金 10,000。",
+    event: "翌期に得意先が倒産し、当該売掛金1万円が回収不能と確定した。",
+    debit: [{ account: "貸倒引当金", amount: 10000 }], credit: [{ account: "売掛金", amount: 10000 }],
+    correct: "(借)貸倒引当金 10,000 (貸)売掛金 10,000",
+    distractors: ["(借)貸倒引当金繰入 10,000 (貸)貸倒引当金 10,000", "(借)貸倒引当金繰入 10,000 (貸)売掛金 10,000", "(借)売掛金 10,000 (貸)貸倒引当金 10,000"],
+    steps: ["回収不能が確定し、資産（売掛金）が減少、見積り済みの評価勘定を取り崩す", "貸倒引当金は資産の評価勘定、売掛金は資産", "評価勘定の取り崩しは借方、資産の減少は貸方"] },
+  { topic: "求人広告(掲載課金)", level: "中級",
+    base: "求人広告の掲載契約が成立し、(借)売掛金 100,000 (貸)前受金 100,000 を計上済み。まだ掲載開始前。",
+    event: "掲載開始前に顧客都合でキャンセルとなり、契約自体が取り消された。",
+    debit: [{ account: "前受金", amount: 100000 }], credit: [{ account: "売掛金", amount: 100000 }],
+    correct: "(借)前受金 100,000 (貸)売掛金 100,000",
+    distractors: ["(借)売掛金 100,000 (貸)前受金 100,000", "(借)前受金 100,000 (貸)売上高 100,000", "(借)現金 100,000 (貸)売掛金 100,000"],
+    steps: ["契約取消によりサービス提供義務（前受金）と請求権（売掛金）がともに消滅", "前受金は負債、売掛金は資産", "負債の減少は借方、資産の減少は貸方"] },
+];
+
+function generateFormDQuestions() {
+  return FORM_D_RAW.map((raw, idx) => {
+    const { choices, correctIndex } = buildChoiceSet(raw.correct, [raw.correct, ...raw.distractors], 3);
+    return {
+      id: `d_${idx}`,
+      type: "D",
+      topic: raw.topic,
+      level: raw.level,
+      prompt: `【基本】${raw.base}\n【追加事象】${raw.event}\nこの場合に追加で必要な仕訳は？`,
+      choices,
+      correctIndex,
+      explanation: threeStep(raw.steps[0], raw.steps[1], raw.steps[2]),
+    };
+  });
+}
+
+/* =========================================================
+   5. 全問題プール
+   ========================================================= */
+const ALL_QUESTIONS = [
+  ...generateFormCQuestions(),
+  ...generateFormAQuestions(),
+  ...generateFormBQuestions(),
+  ...generateFormDQuestions(),
+];
+
+const TYPE_LABELS = {
+  A: "形式A: 仕訳→業務当て",
+  B: "形式B: 業務→仕訳穴埋め",
+  C: "形式C: ホームポジション/BS-PL判定",
+  D: "形式D: 正常系→異常系応用",
+  MIX: "ミックスモード（A+Bランダム）",
+};
+
+/* =========================================================
+   6. アプリ状態管理
+   ========================================================= */
+const state = {
+  screen: "top",           // "top" | "quiz" | "result"
+  selectedType: "C",       // "A" | "B" | "C" | "D" | "MIX"
+  selectedTopics: new Set(),  // 空 = 全トピック
+  selectedLevels: new Set(["初級", "中級", "上級"]),
+  count: 10,
+  queue: [],
+  index: 0,
+  score: 0,
+  history: [],            // { question, isCorrect, userAnswerLabel }
+  answered: false,
+  currentSelection: null,  // 形式A/B/D: choiceIndex or {debit, credit}
+  reviewQueueSource: null, // "all" | "wrong"
+  topicStats: {},          // topic -> {correct, total}
+};
+
+function getPoolForType(type) {
+  if (type === "MIX") return ALL_QUESTIONS.filter(q => q.type === "A" || q.type === "B");
+  return ALL_QUESTIONS.filter(q => q.type === type);
+}
+
+function getAvailableTopics(type) {
+  const pool = getPoolForType(type);
+  return [...new Set(pool.map(q => q.topic))];
+}
+
+function buildQueue() {
+  let pool = getPoolForType(state.selectedType);
+  if (state.selectedTopics.size > 0) {
+    pool = pool.filter(q => state.selectedTopics.has(q.topic));
+  }
+  pool = pool.filter(q => state.selectedLevels.has(q.level));
+  pool = shuffle(pool);
+  return pool.slice(0, Math.min(state.count, pool.length));
+}
+
+function resetRunState() {
+  state.index = 0;
+  state.score = 0;
+  state.history = [];
+  state.answered = false;
+  state.currentSelection = null;
+  state.topicStats = {};
+}
+
+function startQuiz() {
+  state.queue = buildQueue();
+  if (state.queue.length === 0) return;
+  resetRunState();
+  state.screen = "quiz";
+  render();
+}
+
+function startReviewWrongOnly() {
+  const wrongQuestions = state.history.filter(h => !h.isCorrect).map(h => h.question);
+  if (wrongQuestions.length === 0) return;
+  state.queue = shuffle(wrongQuestions);
+  resetRunState();
+  state.screen = "quiz";
+  render();
+}
+
+function backToTop() {
+  state.screen = "top";
+  render();
+}
+
+/* =========================================================
+   7. 描画: トップ画面
+   ========================================================= */
+function renderTop() {
+  const topics = getAvailableTopics(state.selectedType);
+  // 選択中のトピックのうち、現在の出題形式に存在しないものは除去
+  state.selectedTopics = new Set([...state.selectedTopics].filter(t => topics.includes(t)));
+
+  const typeOptions = ["C", "A", "B", "D", "MIX"];
+
+  return `
+    <h1>会計仕訳クイズトレーナー</h1>
+    <div class="subtitle">増減判定 → 5分類判定 → ホームポジション確認 を反復練習しよう</div>
+
+    <div class="card">
+      <div class="section-label">① 出題形式</div>
+      <div class="radio-group" id="type-group">
+        ${typeOptions.map(t => `<div class="pill ${state.selectedType === t ? "selected" : ""}" data-type="${t}">${TYPE_LABELS[t]}</div>`).join("")}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">② トピック（未選択=全範囲）</div>
+      <div class="check-group" id="topic-group">
+        ${topics.map(t => `<div class="pill ${state.selectedTopics.has(t) ? "selected" : ""}" data-topic="${t}">${t}</div>`).join("")}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">③ 難易度</div>
+      <div class="check-group" id="level-group">
+        ${["初級", "中級", "上級"].map(l => `<div class="pill ${state.selectedLevels.has(l) ? "selected" : ""}" data-level="${l}">${l}</div>`).join("")}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">④ 出題数</div>
+      <div class="count-group" id="count-group">
+        ${[5, 10, 20].map(c => `<div class="pill ${state.count === c ? "selected" : ""}" data-count="${c}">${c}問</div>`).join("")}
+      </div>
+    </div>
+
+    <button class="main-btn" id="start-btn">クイズをはじめる</button>
+    <footer class="app-footer">会計仕訳クイズトレーナー / 全${ALL_QUESTIONS.length}問収録</footer>
+  `;
+}
+
+function bindTopEvents() {
+  document.querySelectorAll("#type-group .pill").forEach(el => {
+    el.addEventListener("click", () => {
+      state.selectedType = el.dataset.type;
+      state.selectedTopics = new Set();
+      render();
+    });
+  });
+  document.querySelectorAll("#topic-group .pill").forEach(el => {
+    el.addEventListener("click", () => {
+      const t = el.dataset.topic;
+      if (state.selectedTopics.has(t)) state.selectedTopics.delete(t);
+      else state.selectedTopics.add(t);
+      render();
+    });
+  });
+  document.querySelectorAll("#level-group .pill").forEach(el => {
+    el.addEventListener("click", () => {
+      const l = el.dataset.level;
+      if (state.selectedLevels.has(l)) {
+        if (state.selectedLevels.size > 1) state.selectedLevels.delete(l);
+      } else {
+        state.selectedLevels.add(l);
+      }
+      render();
+    });
+  });
+  document.querySelectorAll("#count-group .pill").forEach(el => {
+    el.addEventListener("click", () => {
+      state.count = parseInt(el.dataset.count, 10);
+      render();
+    });
+  });
+  document.getElementById("start-btn").addEventListener("click", startQuiz);
+}
+
+/* =========================================================
+   8. 描画: 出題画面
+   ========================================================= */
+function currentQuestion() {
+  return state.queue[state.index];
+}
+
+function recordAnswer(isCorrect, userAnswerLabel) {
+  if (state.answered) return;
+  state.answered = true;
+  const q = currentQuestion();
+  if (isCorrect) state.score++;
+  state.history.push({ question: q, isCorrect, userAnswerLabel });
+
+  const t = q.topic;
+  if (!state.topicStats[t]) state.topicStats[t] = { correct: 0, total: 0 };
+  state.topicStats[t].total++;
+  if (isCorrect) state.topicStats[t].correct++;
+
+  render();
+}
+
+function nextQuestion() {
+  state.answered = false;
+  state.currentSelection = null;
+  if (state.index + 1 >= state.queue.length) {
+    state.screen = "result";
+  } else {
+    state.index++;
+  }
+  render();
+}
+
+function renderChoiceQuestion(q) {
+  const isJournalPrompt = q.type === "A" || q.type === "D";
+  return `
+    <div class="prompt-text">${q.prompt.replace(/\n/g, "<br>")}</div>
+    <div id="choices">
+      ${q.choices.map((c, i) => `<button class="choice-btn" data-idx="${i}">${c}</button>`).join("")}
+    </div>
+  `;
+}
+
+function renderBlankQuestion(q) {
+  const sel = state.currentSelection || { debit: null, credit: null };
+  return `
+    <div class="prompt-text">${q.prompt}</div>
+    <div class="blank-box">
+      <div class="blank-label">借方（金額: ${q.amount.toLocaleString()}円）</div>
+      <div class="blank-selected">${sel.debit || "（選択してください）"}</div>
+      <div class="option-row" id="debit-options">
+        ${q.debit.options.map(o => `<div class="option-btn ${sel.debit === o ? "chosen" : ""}" data-slot="debit" data-val="${o}">${o}</div>`).join("")}
+      </div>
+    </div>
+    <div class="blank-box">
+      <div class="blank-label">貸方（金額: ${q.amount.toLocaleString()}円）</div>
+      <div class="blank-selected">${sel.credit || "（選択してください）"}</div>
+      <div class="option-row" id="credit-options">
+        ${q.credit.options.map(o => `<div class="option-btn ${sel.credit === o ? "chosen" : ""}" data-slot="credit" data-val="${o}">${o}</div>`).join("")}
+      </div>
+    </div>
+    <button class="main-btn" id="submit-blank-btn" ${(!sel.debit || !sel.credit) ? "disabled" : ""}>回答する</button>
+  `;
+}
+
+function renderQuiz() {
+  const q = currentQuestion();
+  const progress = Math.round(((state.index) / state.queue.length) * 100);
+
+  let bodyHtml;
+  if (q.type === "B") {
+    bodyHtml = state.answered ? renderBlankAnswered(q) : renderBlankQuestion(q);
+  } else {
+    bodyHtml = state.answered ? renderChoiceAnswered(q) : renderChoiceQuestion(q);
+  }
+
+  return `
+    <div class="meta-row">
+      <span>問題 ${state.index + 1} / ${state.queue.length}</span>
+      <span>${q.topic} ・ ${q.level} ・ ${TYPE_LABELS[q.type]}</span>
+    </div>
+    <div class="progress-bar-outer"><div class="progress-bar-inner" style="width:${progress}%"></div></div>
+    <div class="card">
+      ${bodyHtml}
+    </div>
+  `;
+}
+
+function renderChoiceAnswered(q) {
+  const last = state.history[state.history.length - 1];
+  const bannerClass = last.isCorrect ? "ok" : "ng";
+  const bannerText = last.isCorrect ? "正解！" : "不正解";
+  return `
+    <div class="prompt-text">${q.prompt.replace(/\n/g, "<br>")}</div>
+    <div class="result-banner ${bannerClass}">${bannerText}</div>
+    <div id="choices">
+      ${q.choices.map((c, i) => {
+        let cls = "choice-btn disabled";
+        if (i === q.correctIndex) cls += " correct";
+        else if (i === last.userAnswerLabel) cls += " wrong";
+        return `<button class="${cls}" disabled>${c}</button>`;
+      }).join("")}
+    </div>
+    <div class="explanation-box">${q.explanation.replace(/\n/g, "<br>")}</div>
+    <button class="main-btn" id="next-btn">次へ</button>
+  `;
+}
+
+function renderBlankAnswered(q) {
+  const last = state.history[state.history.length - 1];
+  const bannerClass = last.isCorrect ? "ok" : "ng";
+  const bannerText = last.isCorrect ? "正解！" : "不正解";
+  const sel = last.userAnswerLabel;
+  return `
+    <div class="prompt-text">${q.prompt}</div>
+    <div class="result-banner ${bannerClass}">${bannerText}</div>
+    <table class="journal-table">
+      <tr><th>科目</th><th>あなたの回答</th><th>正解</th></tr>
+      <tr><td class="account">借方</td><td>${sel.debit}</td><td>${q.debit.correct}</td></tr>
+      <tr><td class="account">貸方</td><td>${sel.credit}</td><td>${q.credit.correct}</td></tr>
+    </table>
+    <div class="explanation-box">${q.explanation.replace(/\n/g, "<br>")}</div>
+    <button class="main-btn" id="next-btn">次へ</button>
+  `;
+}
+
+function bindQuizEvents() {
+  const q = currentQuestion();
+  if (!state.answered) {
+    if (q.type === "B") {
+      document.querySelectorAll(".option-btn").forEach(el => {
+        el.addEventListener("click", () => {
+          const slot = el.dataset.slot;
+          const val = el.dataset.val;
+          if (!state.currentSelection) state.currentSelection = { debit: null, credit: null };
+          state.currentSelection[slot] = val;
+          render();
+        });
+      });
+      const submitBtn = document.getElementById("submit-blank-btn");
+      if (submitBtn) {
+        submitBtn.addEventListener("click", () => {
+          const sel = state.currentSelection;
+          const isCorrect = sel.debit === q.debit.correct && sel.credit === q.credit.correct;
+          recordAnswer(isCorrect, { debit: sel.debit, credit: sel.credit });
+        });
+      }
+    } else {
+      document.querySelectorAll(".choice-btn").forEach(el => {
+        el.addEventListener("click", () => {
+          const idx = parseInt(el.dataset.idx, 10);
+          recordAnswer(idx === q.correctIndex, idx);
+        });
+      });
+    }
+  } else {
+    const nextBtn = document.getElementById("next-btn");
+    if (nextBtn) nextBtn.addEventListener("click", nextQuestion);
+  }
+}
+
+/* =========================================================
+   9. 描画: 結果画面
+   ========================================================= */
+let chartInstance = null;
+
+function renderResult() {
+  const total = state.history.length;
+  const correct = state.score;
+  const rate = total > 0 ? Math.round((correct / total) * 100) : 0;
+  const wrongList = state.history.filter(h => !h.isCorrect);
+
+  return `
+    <h1>結果</h1>
+    <div class="card">
+      <div class="score-big">${rate}%</div>
+      <div class="score-sub">${correct} / ${total} 問正解</div>
+      <div class="chart-wrap"><canvas id="topic-chart"></canvas></div>
+    </div>
+
+    ${wrongList.length > 0 ? `
+    <div class="card">
+      <div class="section-label">間違えた問題 (${wrongList.length}問)</div>
+      ${wrongList.map(h => renderWrongItem(h)).join("")}
+    </div>
+    ` : `<div class="card"><div class="empty-note">全問正解です！お見事です。</div></div>`}
+
+    ${wrongList.length > 0 ? `<button class="main-btn" id="retry-wrong-btn">間違えた問題だけ再挑戦</button>` : ""}
+    <button class="sub-btn" id="back-top-btn">トップ画面に戻る</button>
+  `;
+}
+
+function renderWrongItem(h) {
+  const q = h.question;
+  let userAnsText, correctText;
+  if (q.type === "B") {
+    userAnsText = `借方: ${h.userAnswerLabel.debit} / 貸方: ${h.userAnswerLabel.credit}`;
+    correctText = `借方: ${q.debit.correct} / 貸方: ${q.credit.correct}`;
+  } else {
+    userAnsText = q.choices[h.userAnswerLabel];
+    correctText = q.choices[q.correctIndex];
+  }
+  return `
+    <div class="wrong-item">
+      <div class="wq">${q.prompt.replace(/\n/g, "<br>")}</div>
+      <div class="wa">あなたの回答: ${userAnsText}</div>
+      <div class="wc">正解: ${correctText}</div>
+      <div class="explanation-box">${q.explanation.replace(/\n/g, "<br>")}</div>
+    </div>
+  `;
+}
+
+function drawTopicChart() {
+  const ctx = document.getElementById("topic-chart");
+  if (!ctx) return;
+  const topics = Object.keys(state.topicStats);
+  const rates = topics.map(t => {
+    const s = state.topicStats[t];
+    return Math.round((s.correct / s.total) * 100);
+  });
+  if (chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: topics,
+      datasets: [{
+        label: "トピック別正答率(%)",
+        data: rates,
+        backgroundColor: rates.map(r => r >= 70 ? "#16a34a" : r >= 40 ? "#f59e0b" : "#dc2626"),
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: "y",
+      scales: { x: { min: 0, max: 100, ticks: { callback: v => v + "%" } } },
+      plugins: { legend: { display: false } },
+    }
+  });
+}
+
+function bindResultEvents() {
+  const retryBtn = document.getElementById("retry-wrong-btn");
+  if (retryBtn) retryBtn.addEventListener("click", startReviewWrongOnly);
+  document.getElementById("back-top-btn").addEventListener("click", backToTop);
+  drawTopicChart();
+}
+
+/* =========================================================
+   10. メインレンダラ
+   ========================================================= */
+function render() {
+  const app = document.getElementById("app");
+  if (state.screen === "top") {
+    app.innerHTML = renderTop();
+    bindTopEvents();
+  } else if (state.screen === "quiz") {
+    if (state.queue.length === 0) {
+      app.innerHTML = `<div class="empty-note">出題可能な問題がありません。条件を変えてください。</div><button class="sub-btn" id="back-top-btn">トップ画面に戻る</button>`;
+      document.getElementById("back-top-btn").addEventListener("click", backToTop);
+      return;
+    }
+    app.innerHTML = renderQuiz();
+    bindQuizEvents();
+  } else if (state.screen === "result") {
+    app.innerHTML = renderResult();
+    bindResultEvents();
+  }
+}
+
+render();
+</script>
+</body>
+</html>
