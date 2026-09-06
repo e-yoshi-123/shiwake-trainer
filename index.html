@@ -126,24 +126,34 @@
     color: var(--color-text-sub);
     margin-bottom: 12px;
   }
-  .journal-table {
+  .tj-table {
     width: 100%;
     border-collapse: collapse;
-    margin: 12px 0;
-    font-size: 0.95rem;
-  }
-  .journal-table th {
-    background: #f9fafb;
-    font-size: 0.8rem;
-    padding: 6px 8px;
+    margin: 4px 0 16px;
     border: 1px solid var(--color-border);
+    border-radius: 10px;
+    overflow: hidden;
   }
-  .journal-table td {
-    padding: 8px;
-    border: 1px solid var(--color-border);
-    text-align: right;
+  .tj-table th {
+    background: #eef2ff;
+    color: var(--color-primary-dark);
+    font-size: 0.78rem;
+    font-weight: bold;
+    padding: 8px 12px;
+    text-align: left;
   }
-  .journal-table td.account { text-align: left; }
+  .tj-table th.tj-debit-h { border-right: 2px solid var(--color-primary); }
+  .tj-table td {
+    padding: 10px 12px;
+    vertical-align: top;
+    border-top: 1px solid var(--color-border);
+    width: 50%;
+  }
+  .tj-table tr:first-child td { border-top: none; }
+  .tj-table td.tj-debit-cell { border-right: 2px solid var(--color-border); }
+  .tj-cell { display: flex; justify-content: space-between; gap: 8px; }
+  .tj-acc { text-align: left; }
+  .tj-amt { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .prompt-text {
     font-size: 1.02rem;
     margin: 8px 0 16px;
@@ -166,12 +176,20 @@
   .choice-btn.correct { background: var(--color-correct-bg); border-color: var(--color-correct); }
   .choice-btn.wrong { background: var(--color-wrong-bg); border-color: var(--color-wrong); }
   .choice-btn.disabled { pointer-events: none; opacity: 0.85; }
+  .blank-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
   .blank-box {
     border: 2px dashed var(--color-border);
     border-radius: 10px;
     padding: 10px;
-    margin-bottom: 14px;
+    flex: 1 1 45%;
+    min-width: 140px;
   }
+  .blank-box.blank-debit { border-color: var(--color-primary); }
   .blank-box .blank-label { font-weight: bold; font-size: 0.85rem; margin-bottom: 6px; color: var(--color-text-sub); }
   .blank-selected {
     font-size: 1.1rem;
@@ -546,10 +564,6 @@ const FORM_A_RAW = [
     steps: ["損益勘定に集約された差額（当期純利益）を最終的に純資産へ振り替える", "損益勘定の差額は当期純利益、繰越利益剰余金は純資産", "損益勘定の減少は借方、純資産の増加は貸方"] },
 ];
 
-function formatEntry(entries) {
-  return entries.map(e => `${e.account} ${e.amount.toLocaleString()}`).join(" / ");
-}
-
 function generateFormAQuestions() {
   return FORM_A_RAW.map((raw, idx) => {
     const { choices, correctIndex } = buildChoiceSet(raw.correct, [raw.correct, ...raw.distractors], 3);
@@ -558,7 +572,8 @@ function generateFormAQuestions() {
       type: "A",
       topic: raw.topic,
       level: raw.level,
-      prompt: `次の仕訳は、どの取引を表しているか？\n(借) ${formatEntry(raw.debit)}\n(貸) ${formatEntry(raw.credit)}`,
+      prompt: `次の仕訳は、どの取引を表しているか？`,
+      journal: { debit: raw.debit, credit: raw.credit },
       choices,
       correctIndex,
       explanation: threeStep(raw.steps[0], raw.steps[1], raw.steps[2]),
@@ -726,6 +741,7 @@ const TYPE_LABELS = {
    ========================================================= */
 const state = {
   screen: "top",           // "top" | "quiz" | "result"
+  mode: "quiz",            // "quiz" | "study"
   selectedType: "C",       // "A" | "B" | "C" | "D" | "MIX"
   selectedTopics: new Set(),  // 空 = 全トピック
   selectedLevels: new Set(["初級", "中級", "上級"]),
@@ -806,39 +822,53 @@ function renderTop() {
     <div class="subtitle">増減判定 → 5分類判定 → ホームポジション確認 を反復練習しよう</div>
 
     <div class="card">
-      <div class="section-label">① 出題形式</div>
+      <div class="section-label">① 学習スタイル</div>
+      <div class="radio-group" id="mode-group">
+        <div class="pill ${state.mode === "quiz" ? "selected" : ""}" data-mode="quiz">クイズモード（自分で回答する）</div>
+        <div class="pill ${state.mode === "study" ? "selected" : ""}" data-mode="study">解説モード（最初から答え・解説を見る）</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">② 出題形式</div>
       <div class="radio-group" id="type-group">
         ${typeOptions.map(t => `<div class="pill ${state.selectedType === t ? "selected" : ""}" data-type="${t}">${TYPE_LABELS[t]}</div>`).join("")}
       </div>
     </div>
 
     <div class="card">
-      <div class="section-label">② トピック（未選択=全範囲）</div>
+      <div class="section-label">③ トピック（未選択=全範囲）</div>
       <div class="check-group" id="topic-group">
         ${topics.map(t => `<div class="pill ${state.selectedTopics.has(t) ? "selected" : ""}" data-topic="${t}">${t}</div>`).join("")}
       </div>
     </div>
 
     <div class="card">
-      <div class="section-label">③ 難易度</div>
+      <div class="section-label">④ 難易度</div>
       <div class="check-group" id="level-group">
         ${["初級", "中級", "上級"].map(l => `<div class="pill ${state.selectedLevels.has(l) ? "selected" : ""}" data-level="${l}">${l}</div>`).join("")}
       </div>
     </div>
 
     <div class="card">
-      <div class="section-label">④ 出題数</div>
+      <div class="section-label">⑤ 出題数</div>
       <div class="count-group" id="count-group">
         ${[5, 10, 20].map(c => `<div class="pill ${state.count === c ? "selected" : ""}" data-count="${c}">${c}問</div>`).join("")}
       </div>
     </div>
 
-    <button class="main-btn" id="start-btn">クイズをはじめる</button>
+    <button class="main-btn" id="start-btn">${state.mode === "study" ? "解説を見る" : "クイズをはじめる"}</button>
     <footer class="app-footer">会計仕訳クイズトレーナー / 全${ALL_QUESTIONS.length}問収録</footer>
   `;
 }
 
 function bindTopEvents() {
+  document.querySelectorAll("#mode-group .pill").forEach(el => {
+    el.addEventListener("click", () => {
+      state.mode = el.dataset.mode;
+      render();
+    });
+  });
   document.querySelectorAll("#type-group .pill").forEach(el => {
     el.addEventListener("click", () => {
       state.selectedType = el.dataset.type;
@@ -907,10 +937,40 @@ function nextQuestion() {
   render();
 }
 
+function nextQuestionStudy() {
+  state.history.push({ question: currentQuestion(), isCorrect: true, userAnswerLabel: null });
+  if (state.index + 1 >= state.queue.length) {
+    state.screen = "result";
+  } else {
+    state.index++;
+  }
+  render();
+}
+
+function renderJournalTable(journal) {
+  if (!journal) return "";
+  const rows = Math.max(journal.debit.length, journal.credit.length);
+  let trs = "";
+  for (let i = 0; i < rows; i++) {
+    const d = journal.debit[i];
+    const c = journal.credit[i];
+    trs += `<tr>
+      <td class="tj-cell tj-debit-cell">${d ? `<span class="tj-acc">${d.account}</span><span class="tj-amt">${d.amount.toLocaleString()}</span>` : ""}</td>
+      <td class="tj-cell tj-credit-cell">${c ? `<span class="tj-acc">${c.account}</span><span class="tj-amt">${c.amount.toLocaleString()}</span>` : ""}</td>
+    </tr>`;
+  }
+  return `
+    <table class="tj-table">
+      <thead><tr><th class="tj-debit-h">借方</th><th class="tj-credit-h">貸方</th></tr></thead>
+      <tbody>${trs}</tbody>
+    </table>
+  `;
+}
+
 function renderChoiceQuestion(q) {
-  const isJournalPrompt = q.type === "A" || q.type === "D";
   return `
     <div class="prompt-text">${q.prompt.replace(/\n/g, "<br>")}</div>
+    ${renderJournalTable(q.journal)}
     <div id="choices">
       ${q.choices.map((c, i) => `<button class="choice-btn" data-idx="${i}">${c}</button>`).join("")}
     </div>
@@ -921,18 +981,20 @@ function renderBlankQuestion(q) {
   const sel = state.currentSelection || { debit: null, credit: null };
   return `
     <div class="prompt-text">${q.prompt}</div>
-    <div class="blank-box">
-      <div class="blank-label">借方（金額: ${q.amount.toLocaleString()}円）</div>
-      <div class="blank-selected">${sel.debit || "（選択してください）"}</div>
-      <div class="option-row" id="debit-options">
-        ${q.debit.options.map(o => `<div class="option-btn ${sel.debit === o ? "chosen" : ""}" data-slot="debit" data-val="${o}">${o}</div>`).join("")}
+    <div class="blank-row">
+      <div class="blank-box blank-debit">
+        <div class="blank-label">借方（${q.amount.toLocaleString()}円）</div>
+        <div class="blank-selected">${sel.debit || "（選択してください）"}</div>
+        <div class="option-row" id="debit-options">
+          ${q.debit.options.map(o => `<div class="option-btn ${sel.debit === o ? "chosen" : ""}" data-slot="debit" data-val="${o}">${o}</div>`).join("")}
+        </div>
       </div>
-    </div>
-    <div class="blank-box">
-      <div class="blank-label">貸方（金額: ${q.amount.toLocaleString()}円）</div>
-      <div class="blank-selected">${sel.credit || "（選択してください）"}</div>
-      <div class="option-row" id="credit-options">
-        ${q.credit.options.map(o => `<div class="option-btn ${sel.credit === o ? "chosen" : ""}" data-slot="credit" data-val="${o}">${o}</div>`).join("")}
+      <div class="blank-box blank-credit">
+        <div class="blank-label">貸方（${q.amount.toLocaleString()}円）</div>
+        <div class="blank-selected">${sel.credit || "（選択してください）"}</div>
+        <div class="option-row" id="credit-options">
+          ${q.credit.options.map(o => `<div class="option-btn ${sel.credit === o ? "chosen" : ""}" data-slot="credit" data-val="${o}">${o}</div>`).join("")}
+        </div>
       </div>
     </div>
     <button class="main-btn" id="submit-blank-btn" ${(!sel.debit || !sel.credit) ? "disabled" : ""}>回答する</button>
@@ -944,21 +1006,50 @@ function renderQuiz() {
   const progress = Math.round(((state.index) / state.queue.length) * 100);
 
   let bodyHtml;
-  if (q.type === "B") {
+  if (state.mode === "study") {
+    bodyHtml = q.type === "B" ? renderBlankStudy(q) : renderChoiceStudy(q);
+  } else if (q.type === "B") {
     bodyHtml = state.answered ? renderBlankAnswered(q) : renderBlankQuestion(q);
   } else {
     bodyHtml = state.answered ? renderChoiceAnswered(q) : renderChoiceQuestion(q);
   }
 
+  const modeLabel = state.mode === "study" ? "解説モード" : "クイズモード";
   return `
     <div class="meta-row">
       <span>問題 ${state.index + 1} / ${state.queue.length}</span>
-      <span>${q.topic} ・ ${q.level} ・ ${TYPE_LABELS[q.type]}</span>
+      <span>${q.topic} ・ ${q.level} ・ ${TYPE_LABELS[q.type]} ・ ${modeLabel}</span>
     </div>
     <div class="progress-bar-outer"><div class="progress-bar-inner" style="width:${progress}%"></div></div>
     <div class="card">
       ${bodyHtml}
     </div>
+  `;
+}
+
+function renderChoiceStudy(q) {
+  return `
+    <div class="prompt-text">${q.prompt.replace(/\n/g, "<br>")}</div>
+    ${renderJournalTable(q.journal)}
+    <div class="result-banner ok">正解はこちら</div>
+    <div id="choices">
+      ${q.choices.map((c, i) => {
+        const cls = i === q.correctIndex ? "choice-btn disabled correct" : "choice-btn disabled";
+        return `<button class="${cls}" disabled>${c}</button>`;
+      }).join("")}
+    </div>
+    <div class="explanation-box">${q.explanation.replace(/\n/g, "<br>")}</div>
+    <button class="main-btn" id="next-btn">次へ</button>
+  `;
+}
+
+function renderBlankStudy(q) {
+  return `
+    <div class="prompt-text">${q.prompt}</div>
+    <div class="result-banner ok">正解はこちら</div>
+    ${renderJournalTable({ debit: [{ account: q.debit.correct, amount: q.amount }], credit: [{ account: q.credit.correct, amount: q.amount }] })}
+    <div class="explanation-box">${q.explanation.replace(/\n/g, "<br>")}</div>
+    <button class="main-btn" id="next-btn">次へ</button>
   `;
 }
 
@@ -968,6 +1059,7 @@ function renderChoiceAnswered(q) {
   const bannerText = last.isCorrect ? "正解！" : "不正解";
   return `
     <div class="prompt-text">${q.prompt.replace(/\n/g, "<br>")}</div>
+    ${renderJournalTable(q.journal)}
     <div class="result-banner ${bannerClass}">${bannerText}</div>
     <div id="choices">
       ${q.choices.map((c, i) => {
@@ -987,14 +1079,23 @@ function renderBlankAnswered(q) {
   const bannerClass = last.isCorrect ? "ok" : "ng";
   const bannerText = last.isCorrect ? "正解！" : "不正解";
   const sel = last.userAnswerLabel;
+  const userTable = renderJournalTable({
+    debit: [{ account: sel.debit, amount: q.amount }],
+    credit: [{ account: sel.credit, amount: q.amount }],
+  });
+  const correctTable = last.isCorrect ? "" : `
+    <div class="section-label">正解</div>
+    ${renderJournalTable({
+      debit: [{ account: q.debit.correct, amount: q.amount }],
+      credit: [{ account: q.credit.correct, amount: q.amount }],
+    })}
+  `;
   return `
     <div class="prompt-text">${q.prompt}</div>
     <div class="result-banner ${bannerClass}">${bannerText}</div>
-    <table class="journal-table">
-      <tr><th>科目</th><th>あなたの回答</th><th>正解</th></tr>
-      <tr><td class="account">借方</td><td>${sel.debit}</td><td>${q.debit.correct}</td></tr>
-      <tr><td class="account">貸方</td><td>${sel.credit}</td><td>${q.credit.correct}</td></tr>
-    </table>
+    <div class="section-label">あなたの回答</div>
+    ${userTable}
+    ${correctTable}
     <div class="explanation-box">${q.explanation.replace(/\n/g, "<br>")}</div>
     <button class="main-btn" id="next-btn">次へ</button>
   `;
@@ -1002,6 +1103,11 @@ function renderBlankAnswered(q) {
 
 function bindQuizEvents() {
   const q = currentQuestion();
+  if (state.mode === "study") {
+    const nextBtn = document.getElementById("next-btn");
+    if (nextBtn) nextBtn.addEventListener("click", nextQuestionStudy);
+    return;
+  }
   if (!state.answered) {
     if (q.type === "B") {
       document.querySelectorAll(".option-btn").forEach(el => {
@@ -1041,6 +1147,17 @@ function bindQuizEvents() {
 let chartInstance = null;
 
 function renderResult() {
+  if (state.mode === "study") {
+    return `
+      <h1>学習完了</h1>
+      <div class="card">
+        <div class="score-big">${state.history.length}問</div>
+        <div class="score-sub">解説を確認しました</div>
+      </div>
+      <button class="sub-btn" id="back-top-btn">トップ画面に戻る</button>
+    `;
+  }
+
   const total = state.history.length;
   const correct = state.score;
   const rate = total > 0 ? Math.round((correct / total) * 100) : 0;
@@ -1117,6 +1234,10 @@ function drawTopicChart() {
 }
 
 function bindResultEvents() {
+  if (state.mode === "study") {
+    document.getElementById("back-top-btn").addEventListener("click", backToTop);
+    return;
+  }
   const retryBtn = document.getElementById("retry-wrong-btn");
   if (retryBtn) retryBtn.addEventListener("click", startReviewWrongOnly);
   document.getElementById("back-top-btn").addEventListener("click", backToTop);
