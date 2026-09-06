@@ -25,28 +25,28 @@
     font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
     background: var(--color-bg);
     color: var(--color-text);
-    line-height: 1.6;
+    line-height: 1.4;
   }
   #app {
     max-width: 640px;
     margin: 0 auto;
-    padding: 16px;
+    padding: 10px;
     min-height: 100vh;
   }
-  h1 { font-size: 1.4rem; margin: 8px 0 4px; }
-  h2 { font-size: 1.1rem; margin: 0 0 12px; }
-  .subtitle { color: var(--color-text-sub); font-size: 0.85rem; margin-bottom: 20px; }
+  h1 { font-size: 1.1rem; margin: 0 0 1px; }
+  h2 { font-size: 1.05rem; margin: 0 0 8px; }
+  .subtitle { color: var(--color-text-sub); font-size: 0.72rem; margin-bottom: 6px; }
   .card {
     background: var(--color-card);
-    border-radius: 12px;
-    padding: 18px;
-    margin-bottom: 16px;
+    border-radius: 10px;
+    padding: 9px 10px;
+    margin-bottom: 6px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   }
   .section-label {
     font-weight: bold;
-    font-size: 0.95rem;
-    margin-bottom: 8px;
+    font-size: 0.8rem;
+    margin-bottom: 4px;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -63,14 +63,14 @@
   .radio-group, .check-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
   }
   .pill {
     border: 1.5px solid var(--color-border);
     background: #fff;
     border-radius: 999px;
-    padding: 8px 14px;
-    font-size: 0.9rem;
+    padding: 4px 9px;
+    font-size: 0.76rem;
     cursor: pointer;
     user-select: none;
     transition: all 0.15s;
@@ -80,39 +80,39 @@
     border-color: var(--color-primary);
     color: #fff;
   }
-  .count-group { display: flex; gap: 8px; }
+  .count-group { display: flex; gap: 6px; }
   .count-group .pill { flex: 1; text-align: center; }
   button.main-btn {
     width: 100%;
-    padding: 14px;
-    font-size: 1.05rem;
+    padding: 10px;
+    font-size: 0.98rem;
     font-weight: bold;
     color: #fff;
     background: var(--color-primary);
     border: none;
     border-radius: 10px;
     cursor: pointer;
-    margin-top: 8px;
+    margin-top: 6px;
   }
   button.main-btn:hover { background: var(--color-primary-dark); }
   button.main-btn:disabled { background: #9ca3af; cursor: not-allowed; }
   button.sub-btn {
     width: 100%;
-    padding: 12px;
-    font-size: 0.95rem;
+    padding: 9px;
+    font-size: 0.88rem;
     color: var(--color-primary-dark);
     background: #eef2ff;
     border: none;
     border-radius: 10px;
     cursor: pointer;
-    margin-top: 8px;
+    margin-top: 6px;
   }
   .progress-bar-outer {
     background: var(--color-border);
     border-radius: 999px;
-    height: 8px;
+    height: 6px;
     overflow: hidden;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
   }
   .progress-bar-inner {
     background: var(--color-primary);
@@ -122,54 +122,54 @@
   .meta-row {
     display: flex;
     justify-content: space-between;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     color: var(--color-text-sub);
-    margin-bottom: 12px;
+    margin-bottom: 6px;
   }
   .tj-table {
     width: 100%;
     table-layout: fixed;
     border-collapse: collapse;
-    margin: 4px 0 16px;
+    margin: 4px 0 10px;
     border: 1px solid var(--color-border);
-    border-radius: 10px;
+    border-radius: 8px;
     overflow: hidden;
   }
   .tj-table th {
     background: #eef2ff;
     color: var(--color-primary-dark);
-    font-size: 0.78rem;
+    font-size: 0.74rem;
     font-weight: bold;
-    padding: 8px 12px;
+    padding: 5px 10px;
     text-align: left;
   }
   .tj-table th.tj-debit-h { border-right: 2px solid var(--color-primary); }
   .tj-table td {
-    padding: 8px;
+    padding: 6px 8px;
     vertical-align: top;
     border-top: 1px solid var(--color-border);
     width: 50%;
   }
   .tj-table tr:first-child td { border-top: none; }
   .tj-table td.tj-debit-cell { border-right: 2px solid var(--color-border); }
-  .tj-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .tj-acc { text-align: left; font-weight: bold; font-size: 0.88rem; overflow-wrap: break-word; }
-  .tj-amt { text-align: right; font-size: 0.85rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tj-cell { display: flex; flex-direction: column; gap: 1px; }
+  .tj-acc { text-align: left; font-weight: bold; font-size: 0.86rem; overflow-wrap: break-word; }
+  .tj-amt { text-align: right; font-size: 0.82rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .prompt-text {
-    font-size: 1.02rem;
-    margin: 8px 0 16px;
+    font-size: 0.94rem;
+    margin: 2px 0 8px;
     white-space: pre-wrap;
   }
   .choice-btn {
     display: block;
     width: 100%;
     text-align: left;
-    padding: 12px 14px;
-    margin-bottom: 8px;
+    padding: 9px 11px;
+    margin-bottom: 6px;
     border: 1.5px solid var(--color-border);
     background: #fff;
-    border-radius: 10px;
-    font-size: 0.95rem;
+    border-radius: 9px;
+    font-size: 0.87rem;
     cursor: pointer;
     transition: all 0.15s;
   }
@@ -182,13 +182,13 @@
   .side-picker {
     display: flex;
     border: 2px solid var(--color-border);
-    border-radius: 12px;
+    border-radius: 10px;
     overflow: hidden;
-    margin: 4px 0 16px;
+    margin: 2px 0 10px;
   }
   .side-box {
     flex: 1;
-    padding: 28px 10px;
+    padding: 14px 8px;
     text-align: center;
     cursor: pointer;
     background: #fff;
@@ -196,8 +196,8 @@
   }
   .side-box:first-child { border-right: 2px solid var(--color-border); }
   .side-box:hover:not(.disabled) { background: #f3f4f6; }
-  .side-box .side-label { font-size: 1.35rem; font-weight: bold; }
-  .side-box .side-sub { font-size: 0.78rem; color: var(--color-text-sub); margin-top: 4px; }
+  .side-box .side-label { font-size: 1.1rem; font-weight: bold; }
+  .side-box .side-sub { font-size: 0.7rem; color: var(--color-text-sub); margin-top: 2px; }
   .side-box.correct { background: var(--color-correct-bg); }
   .side-box.correct .side-label { color: var(--color-correct); }
   .side-box.wrong { background: var(--color-wrong-bg); }
@@ -207,32 +207,32 @@
   /* BS/PL構造図（5分類ピッカー・解説図で共用） */
   .acct-diagram {
     display: flex;
-    gap: 10px;
-    margin: 6px 0 16px;
+    gap: 8px;
+    margin: 4px 0 8px;
     flex-wrap: wrap;
   }
   .ad-block {
     flex: 1;
     min-width: 150px;
     border: 1px solid var(--color-border);
-    border-radius: 10px;
+    border-radius: 8px;
     overflow: hidden;
     background: #fff;
   }
   .ad-title {
     background: #f9fafb;
-    font-size: 0.72rem;
+    font-size: 0.65rem;
     font-weight: bold;
     color: var(--color-text-sub);
     text-align: center;
-    padding: 5px;
+    padding: 3px;
     border-bottom: 1px solid var(--color-border);
   }
-  .ad-bs-grid { display: flex; height: 100px; }
+  .ad-bs-grid { display: flex; height: 62px; }
   .ad-bs-grid > .ad-cell:first-child { flex: 1; }
   .ad-bs-right { flex: 1; display: flex; flex-direction: column; }
   .ad-bs-right .ad-cell { flex: 1; }
-  .ad-pl-grid { display: flex; height: 64px; }
+  .ad-pl-grid { display: flex; height: 42px; }
   .ad-pl-grid .ad-cell { flex: 1; }
   .ad-cell {
     display: flex;
@@ -240,13 +240,13 @@
     align-items: center;
     justify-content: center;
     border: 1px solid var(--color-border);
-    font-size: 0.82rem;
+    font-size: 0.72rem;
     font-weight: bold;
     color: var(--color-text-sub);
     background: #fff;
     text-align: center;
   }
-  .ad-cell-side { font-size: 0.65rem; font-weight: normal; margin-top: 2px; }
+  .ad-cell-side { font-size: 0.6rem; font-weight: normal; margin-top: 1px; }
   .ad-cell.ad-hl { background: var(--color-primary); color: #fff; border-color: var(--color-primary-dark); }
   .ad-cell.ad-hl .ad-cell-side { color: #dbeafe; }
   .ad-cell.ad-clickable { cursor: pointer; }
@@ -257,42 +257,43 @@
   .ad-cell.disabled { pointer-events: none; }
   .blank-row {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
-    margin-bottom: 14px;
+    margin-bottom: 8px;
   }
   .blank-box {
     border: 2px dashed var(--color-border);
-    border-radius: 10px;
-    padding: 10px;
+    border-radius: 9px;
+    padding: 7px;
     flex: 1 1 45%;
     min-width: 140px;
   }
   .blank-box.blank-debit { border-color: var(--color-primary); }
-  .blank-box .blank-label { font-weight: bold; font-size: 0.85rem; margin-bottom: 6px; color: var(--color-text-sub); }
+  .blank-box .blank-label { font-weight: bold; font-size: 0.76rem; margin-bottom: 3px; color: var(--color-text-sub); }
   .blank-selected {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     font-weight: bold;
-    min-height: 1.4em;
-    margin-bottom: 8px;
+    min-height: 1.2em;
+    margin-bottom: 5px;
     color: var(--color-primary-dark);
   }
-  .option-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .option-row { display: flex; flex-wrap: wrap; gap: 5px; }
   .option-btn {
     border: 1.5px solid var(--color-border);
     background: #fff;
-    border-radius: 8px;
-    padding: 6px 10px;
-    font-size: 0.88rem;
+    border-radius: 7px;
+    padding: 5px 8px;
+    font-size: 0.8rem;
     cursor: pointer;
   }
   .option-btn.chosen { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
   .result-banner {
     text-align: center;
-    padding: 10px;
-    border-radius: 10px;
+    padding: 6px;
+    border-radius: 9px;
     font-weight: bold;
-    margin-bottom: 10px;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
   }
   .result-banner.ok { background: var(--color-correct-bg); color: var(--color-correct); }
   .result-banner.ng { background: var(--color-wrong-bg); color: var(--color-wrong); }
@@ -300,40 +301,40 @@
     background: #f9fafb;
     border-left: 4px solid var(--color-primary);
     border-radius: 6px;
-    padding: 12px 14px;
-    font-size: 0.9rem;
-    margin: 12px 0;
+    padding: 8px 10px;
+    font-size: 0.82rem;
+    margin: 6px 0;
     white-space: pre-wrap;
   }
   .score-big {
-    font-size: 2.4rem;
+    font-size: 2rem;
     font-weight: bold;
     text-align: center;
     color: var(--color-primary-dark);
   }
-  .score-sub { text-align: center; color: var(--color-text-sub); margin-bottom: 16px; }
+  .score-sub { text-align: center; color: var(--color-text-sub); margin-bottom: 8px; font-size: 0.85rem; }
   .wrong-item {
     border: 1px solid var(--color-border);
-    border-radius: 10px;
-    padding: 12px;
-    margin-bottom: 10px;
-    font-size: 0.88rem;
+    border-radius: 9px;
+    padding: 9px;
+    margin-bottom: 7px;
+    font-size: 0.82rem;
   }
-  .wrong-item .wq { font-weight: bold; margin-bottom: 6px; }
+  .wrong-item .wq { font-weight: bold; margin-bottom: 4px; }
   .wrong-item .wa { color: var(--color-wrong); }
   .wrong-item .wc { color: var(--color-correct); }
-  .chart-wrap { position: relative; height: 260px; margin: 12px 0; }
+  .chart-wrap { position: relative; height: 220px; margin: 8px 0; }
   .empty-note {
     text-align: center;
     color: var(--color-text-sub);
-    padding: 20px;
-    font-size: 0.9rem;
+    padding: 16px;
+    font-size: 0.85rem;
   }
   footer.app-footer {
     text-align: center;
     color: var(--color-text-sub);
-    font-size: 0.75rem;
-    margin: 24px 0 8px;
+    font-size: 0.68rem;
+    margin: 8px 0 4px;
   }
 </style>
 </head>
@@ -820,7 +821,7 @@ const TYPE_LABELS = {
   B: "形式B: 業務→仕訳穴埋め",
   C: "形式C: ホームポジション/BS-PL判定",
   D: "形式D: 正常系→異常系応用",
-  MIX: "ミックスモード（A+Bランダム）",
+  MIX: "全部ミックス（A+B+C+Dランダム）",
 };
 
 /* =========================================================
@@ -828,8 +829,8 @@ const TYPE_LABELS = {
    ========================================================= */
 const state = {
   screen: "top",           // "top" | "quiz" | "result"
-  mode: "quiz",            // "quiz" | "study"
-  selectedType: "C",       // "A" | "B" | "C" | "D" | "MIX"
+  mode: "study",           // "quiz" | "study"
+  selectedType: "MIX",     // "A" | "B" | "C" | "D" | "MIX"
   selectedTopics: new Set(),  // 空 = 全トピック
   selectedLevels: new Set(["初級", "中級", "上級"]),
   count: 10,
@@ -844,7 +845,7 @@ const state = {
 };
 
 function getPoolForType(type) {
-  if (type === "MIX") return ALL_QUESTIONS.filter(q => q.type === "A" || q.type === "B");
+  if (type === "MIX") return ALL_QUESTIONS;
   return ALL_QUESTIONS.filter(q => q.type === type);
 }
 
@@ -1042,8 +1043,8 @@ function renderJournalTable(journal) {
     const d = journal.debit[i];
     const c = journal.credit[i];
     trs += `<tr>
-      <td class="tj-cell tj-debit-cell">${d ? `<span class="tj-acc">${d.account}</span><span class="tj-amt">${d.amount.toLocaleString()}</span>` : ""}</td>
-      <td class="tj-cell tj-credit-cell">${c ? `<span class="tj-acc">${c.account}</span><span class="tj-amt">${c.amount.toLocaleString()}</span>` : ""}</td>
+      <td class="tj-debit-cell">${d ? `<div class="tj-cell"><span class="tj-acc">${d.account}</span><span class="tj-amt">${d.amount.toLocaleString()}</span></div>` : ""}</td>
+      <td class="tj-credit-cell">${c ? `<div class="tj-cell"><span class="tj-acc">${c.account}</span><span class="tj-amt">${c.amount.toLocaleString()}</span></div>` : ""}</td>
     </tr>`;
   }
   return `
